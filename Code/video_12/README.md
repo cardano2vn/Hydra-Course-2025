@@ -16,3 +16,7 @@
 ---
 
 </div>
+
+- Write Smart Contract
+- Test Onchain using Sidan Laborator
+- Test Offchain using MeshJS
