@@ -2,9 +2,9 @@
 
 <img src="https://www.cardano2vn.io/_next/static/media/loading.db59b266.png" width="120" alt="Hydra Logo" />
 
-# **Cài đặt và Cấu hình Hydra Node**
+# **Khắc phục sự cố Hydra Nodes**
 
-**Hướng dẫn sẵn sàng triển khai để triển khai một nút Cardano được đồng bộ hóa hoàn toàn trên Ubuntu — nền tảng thiết yếu để chạy tính năng mở rộng Hydra Layer 2.**
+**Phân tích chi tiết các lỗi thường gặp trong quá trình vận hành Hydra Nodes, lý giải cơ chế gây lỗi ở từng tầng hệ thống và hướng dẫn cách xử lý đúng chuẩn để đảm bảo hoạt động ổn định và liên tục**
 
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-orange?logo=ubuntu)](https://ubuntu.com/)
 [![Cardano Node](https://img.shields.io/badge/Cardano%20Node-9.0.0%2B-blue?logo=cardano)](https://github.com/IntersectMBO/cardano-node)
@@ -15,4 +15,3 @@
 ---
 
 </div>
-
