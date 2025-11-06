@@ -7,8 +7,8 @@
 **Hướng dẫn sẵn sàng triển khai để triển khai một nút Cardano được đồng bộ hóa hoàn toàn trên Ubuntu — nền tảng thiết yếu để chạy tính năng mở rộng Hydra Layer 2.**
 
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-orange?logo=ubuntu)](https://ubuntu.com/)
-[![Cardano Node](https://img.shields.io/badge/Cardano%20Node-9.0.0%2B-blue?logo=cardano)](https://github.com/IntersectMBO/cardano-node)
-[![Hydra Ready](https://img.shields.io/badge/Hydra-Ready-green?logo=data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDBGRjAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAtMThjLTQuNDEgMC04IDMuNTktOCA4czMuNTkgOCA4IDggOC0zLjU5IDgtOHptMC0xNGMtMy4zMSAwLTYgMi42OS02IDZzMi42OSA2IDYgNiA2LTIuNjkgNi02em0wLTEyYy0yLjIxIDAtNCAxLjc5LTQgNHMxLjc5IDQgNCA0IDQtMS43OSA0LTQtMS43OSA0LTQgNHptMC0xMGMtMS4xIDAtMiAuOS0yIDJzLjkgMiAyIDIgMi0uOSAyLTItLjkgMi0yLTJ6Ii8+PC9zdmc+)](https://hydra.family)
+[![Cardano Node](https://img.shields.io/badge/Cardano%20Node-10.5.1-blue?logo=cardano)](https://github.com/IntersectMBO/cardano-node)
+[![Hydra Ready](https://img.shields.io/badge/Hydra-1.0.0-green?logo=data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDBGRjAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAtMThjLTQuNDEgMC04IDMuNTktOCA4czMuNTkgOCA4IDggOC0zLjU5IDgtOHptMC0xNGMtMy4zMSAwLTYgMi42OS02IDZzMi42OSA2IDYgNiA2LTIuNjkgNi02em0wLTEyYy0yLjIxIDAtNCAxLjc5LTQgNHMxLjc5IDQgNCA0IDQtMS43OSA0LTQtMS43OSA0LTQgNHptMC0xMGMtMS4xIDAtMiAuOS0yIDJzLjkgMiAyIDIgMi0uOSAyLTItLjkgMi0yLTJ6Ii8+PC9zdmc+)](https://hydra.family)
 [![Systemd](https://img.shields.io/badge/Systemd-Service-blue?logo=systemd)](https://systemd.io/)
 [![License: MIT](https://img.shields.io/badge/License-CC--BY--SA%204.0-yellow.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 
@@ -190,8 +190,9 @@ unzip -d ~/bin hydra-x86_64-linux-${HYDRA_VERSION}.zip
 Sau khi giải nén, bạn sẽ có các file như:
 
 ```bash
-~/bin/hydra-node
-~/bin/hydra-tui
+Archive:  hydra-x86_64-linux-1.0.0.zip
+  inflating: /root/bin/hydra-node
+  inflating: /root/bin/hydra-tui
 ```
 
 **4. Thêm Hydra Node vào PATH**
@@ -534,6 +535,14 @@ sudo apt install jq curl
 
 ### 5.2. Khởi chạy Node Alice
 
+Tạo tmux để chạy Node
+
+```bash
+tmux new -t alice-hydra-node
+```
+
+Sau đó
+
 ```bash
 hydra_version=1.0.0
 hydra-node \
@@ -553,7 +562,32 @@ hydra-node \
   --cardano-verification-key credentials/bob-node.vk
 ```
 
+Kết quả
+
+```bash
+{"timestamp":"2025-11-06T04:11:14.378858461Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"point":{"blockHash":"5d2a89ce5fb0dfa022262e535d6e5f5daf3b83b7cef48b1049d707a2bc81011a","slot":95746274,"tag":"ChainPoint"},"tag":"BeginUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:11:14.378878411Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"newUTxO":{},"tag":"EndUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:11:14.378880264Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"point":{"blockHash":"5d2a89ce5fb0dfa022262e535d6e5f5daf3b83b7cef48b1049d707a2bc81011a","slot":95746274,"tag":"ChainPoint"},"receivedTxIds":["3f2e153df2f70bfb08602c0ce8556b8d6d58738b3ea502394a961f0a160d5e38"],"tag":"RolledForward"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:11:14.453863795Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"input":{"chainEvent":{"chainSlot":95746274,"chainTime":"2025-11-06T04:11:14Z","tag":"Tick"},"tag":"ChainInput"},"inputId":15,"tag":"BeginInput"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:11:14.453882302Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"outcome":{"effects":[],"stateChanges":[{"chainSlot":95746274,"tag":"TickObserved"}],"tag":"Continue"},"tag":"LogicOutcome"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:11:14.454060711Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"inputId":15,"tag":"EndInput"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:12:05.736551107Z","threadId":582,"namespace":"HydraNode-\"alice-node2\"","message":{"api":{"reason":"ConnectionClosed","tag":"APIConnectionError"},"tag":"APIServer"}}
+{"timestamp":"2025-11-06T04:12:12.564391526Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"point":{"blockHash":"9c2fff431f2db421df24f2966b832ae2359cb4a6895510e402967f318e998edf","slot":95746332,"tag":"ChainPoint"},"tag":"BeginUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:12:12.565149037Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"newUTxO":{},"tag":"EndUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:12:12.565162457Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"point":{"blockHash":"9c2fff431f2db421df24f2966b832ae2359cb4a6895510e402967f318e998edf","slot":95746332,"tag":"ChainPoint"},"receivedTxIds":["af1fd7f9a51064d26883f79d522038d3dac310c94142e454192fbb435a125c29"],"tag":"RolledForward"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:12:12.676835661Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"input":{"chainEvent":{"chainSlot":95746332,"chainTime":"2025-11-06T04:12:12Z","tag":"Tick"},"tag":"ChainInput"},"inputId":16,"tag":"BeginInput"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:12:12.67684846Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"outcome":{"effects":[],"stateChanges":[{"chainSlot":95746332,"tag":"TickObserved"}],"tag":"Continue"},"tag":"LogicOutcome"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:12:12.677019447Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"inputId":16,"tag":"EndInput"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:12:22.057429347Z","threadId":73,"namespace":"HydraNode-\"alice-node2\"","message":{"network":{"contents":{"etcd":{"caller":"etcdserver/raft.go:427","exceeded-duration":"1.337832ms","expected-duration":"200ms","heartbeat-interval":"100ms","level":"warn","msg":"leader failed to send out heartbeat on time; took too long, leader is overloaded likely from slow disk","to":"33be72d937d7d2df","ts":"2025-11-06T05:12:22.049210+0100"},"tag":"EtcdLog"},"tag":"Etcd"},"tag":"Network"}}
+```
+
 ### 5.3. Khởi chạy Node Bob
+
+```bash
+tmux new -t bob-hydra-node
+```
+
+Sau đó
 
 ```bash
 hydra_version=1.0.0
@@ -574,7 +608,32 @@ hydra-node \
   --cardano-verification-key credentials/alice-node.vk
 ```
 
+Kết quả
+
+```bash
+{"timestamp":"2025-11-06T04:11:14.380739503Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"point":{"blockHash":"5d2a89ce5fb0dfa022262e535d6e5f5daf3b83b7cef48b1049d707a2bc81011a","slot":95746274,"tag":"ChainPoint"},"tag":"BeginUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:11:14.380744671Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"newUTxO":{},"tag":"EndUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:11:14.380746213Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"point":{"blockHash":"5d2a89ce5fb0dfa022262e535d6e5f5daf3b83b7cef48b1049d707a2bc81011a","slot":95746274,"tag":"ChainPoint"},"receivedTxIds":["3f2e153df2f70bfb08602c0ce8556b8d6d58738b3ea502394a961f0a160d5e38"],"tag":"RolledForward"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:11:14.446301172Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"input":{"chainEvent":{"chainSlot":95746274,"chainTime":"2025-11-06T04:11:14Z","tag":"Tick"},"tag":"ChainInput"},"inputId":15,"tag":"BeginInput"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:11:14.446314242Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"outcome":{"effects":[],"stateChanges":[{"chainSlot":95746274,"tag":"TickObserved"}],"tag":"Continue"},"tag":"LogicOutcome"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:11:14.446475114Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"inputId":15,"tag":"EndInput"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:12:12.564849355Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"point":{"blockHash":"9c2fff431f2db421df24f2966b832ae2359cb4a6895510e402967f318e998edf","slot":95746332,"tag":"ChainPoint"},"tag":"BeginUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:12:12.564866791Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"newUTxO":{},"tag":"EndUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:12:12.564868404Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"point":{"blockHash":"9c2fff431f2db421df24f2966b832ae2359cb4a6895510e402967f318e998edf","slot":95746332,"tag":"ChainPoint"},"receivedTxIds":["af1fd7f9a51064d26883f79d522038d3dac310c94142e454192fbb435a125c29"],"tag":"RolledForward"},"tag":"DirectChain"}}
+{"timestamp":"2025-11-06T04:12:12.682620978Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"input":{"chainEvent":{"chainSlot":95746332,"chainTime":"2025-11-06T04:12:12Z","tag":"Tick"},"tag":"ChainInput"},"inputId":16,"tag":"BeginInput"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:12:12.682633267Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"outcome":{"effects":[],"stateChanges":[{"chainSlot":95746332,"tag":"TickObserved"}],"tag":"Continue"},"tag":"LogicOutcome"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:12:12.682777033Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"inputId":16,"tag":"EndInput"},"tag":"Node"}}
+```
+
 ### 5.4. Kiếm tra kết nối
+
+Sau khi thực thi
+
+```bash
+ websocat ws://127.0.0.1:4001 | jq
+```
+
+Kết quả
 
 ```bash
 {
@@ -610,3 +669,5 @@ hydra-node \
   "tag": "Greetings"
 }
 ```
+
+Khi `"networkConnected": true` và `"peersInfo": { "127.0.0.1:5002": true }` chứng tỏ thành công

@@ -15,3 +15,74 @@
 ---
 
 </div>
+
+# Mithril không đúng phiên bản với Hydra Node
+
+
+
+# Cardano Node Shutdown
+
+```bash
+
+hydra_version=0.22.4
+hydra-node \
+ --node-id "alice-node2" \
+ --persistence-dir persistence-alice2 \
+ --cardano-signing-key credentials/alice-node.sk \
+ --hydra-signing-key credentials/alice-hydra.sk \
+ --hydra-scripts-tx-id $(curl https://raw.githubusercontent.com/cardano-scaling/hydra/master/hydra-node/networks.json | jq -r ".preview.\"${hydra_version}\"") \
+ --ledger-protocol-parameters protocol-parameters.json \
+ --testnet-magic 2 \
+ --node-socket $CARDANO_NODE_SOCKET_PATH \
+ --api-port 4001 \
+ --listen 0.0.0.0:5001 \
+ --api-host 0.0.0.0 \
+ --peer 127.0.0.1:5002 \
+ --hydra-verification-key credentials/bob-hydra.vk \
+ --cardano-verification-key credentials/bob-node.vk
+```
+
+```bash
+{"timestamp":"2025-11-06T06:32:17.501506047Z","threadId":7,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"tag":"BeginInitialize"},"tag":"Wallet"},"tag":"DirectChain"}}
+bearer closed: "<socket: 23> closed when reading data, waiting on next header True"
+```
+
+# Các Node chưa được kết nối với nhau
+
+```bash
+tmux new -t alice-node
+```
+
+```bash
+websocat ws://127.0.0.1:4001 | jq
+```
+
+```bash
+{
+  "networkInfo": {
+    "networkConnected": false,
+    "peersInfo": {}
+  },
+  "seq": 334,
+  "tag": "NetworkDisconnected",
+  "timestamp": "2025-11-06T06:29:22.061788575Z"
+}
+```
+
+# Các host với Port cấu hình không đúng
+
+```bash
+{
+  "networkInfo": {
+    "networkConnected": false,
+    "peersInfo": {}
+  },
+  "seq": 334,
+  "tag": "NetworkDisconnected",
+  "timestamp": "2025-11-06T06:29:22.061788575Z"
+}
+```
+
+# Alice & Bob Node không đủ tiền
+
+

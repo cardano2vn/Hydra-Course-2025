@@ -15,3 +15,10 @@
 ---
 
 </div>
+
+```bash
+sudo ufw allow ssh
+sudo ufw allow 4001/tcp    # Hydra Alice API
+sudo ufw allow 4002/tcp    # Hydra Bob API
+sudo ufw enable
+```
