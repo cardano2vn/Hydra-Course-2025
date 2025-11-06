@@ -207,12 +207,7 @@ Layer-2 mang đến bước nhảy vọt về hiệu năng cho Cardano, mở ra 
 - **Độ trễ cực thấp** → <100ms, phù hợp real-time
 - **Chi phí giao dịch gần như bằng 0** (0 ADA trong phần lớn trường hợp off-chain)
 - **Trải nghiệm người dùng (UX) mượt mà** như Web2
-- Hỗ trợ đa dạng các ứng dụng mới:
-  - Game
-  - DeFi
-  - NFT
-  - IoT
-  - SocialFi
+- Hỗ trợ đa dạng các ứng dụng mới: Game, DeFi, NFT, IoT, SocialFi, ...
 - **Dễ tích hợp** với hệ sinh thái hiện có của Cardano, thân thiện cho developer
 
 Layer-2 giúp Cardano trở nên cạnh tranh hơn trong các lĩnh vực yêu cầu tốc độ, chi phí thấp và trải nghiệm người dùng tốt.
@@ -290,10 +285,7 @@ Hydra được thiết kế để mở rộng theo chiều ngang, cho phép Card
 - Mỗi Head hoạt động như **một phân đoạn tốc độ cao**
 - **Horizontal scaling**: thêm Head = tăng throughput
 - Không có giới hạn lý thuyết về số lượng Head
-- Có thể phân vùng theo nhu cầu:
-  - dApp (DEX, game, NFT)
-  - Ngành (DeFi, IoT, Gaming)
-  - Khu vực địa lý
+- Có thể phân vùng theo nhu cầu: dApp (DEX, game, NFT), Ngành (DeFi, IoT, Gaming), Khu vực địa lý
 
 Hydra cho phép sử dụng tài nguyên một cách tối ưu, tùy theo nhu cầu thực tế của từng ứng dụng.
 
@@ -305,9 +297,7 @@ Hydra đạt được tốc độ cao mà **không tạo ra cơ chế bảo mậ
 
 ### Cách Hydra đảm bảo an toàn
 
-- **Kế thừa 100% bảo mật từ Cardano Layer-1**
-  - Ouroboros Proof-of-Stake
-  - Finality và auditability
+- **Kế thừa 100% bảo mật từ Cardano Layer-1:** Ouroboros Proof-of-Stake, Finality và auditability
 - Mọi giao dịch off-chain đều **có thể kiểm chứng**
 - Khi đóng Head → trạng thái cuối cùng được **multisig** → Layer-1 xác nhận
 - Rủi ro được **cô lập trong từng Head**, không lan ra toàn mạng
@@ -400,9 +390,7 @@ Hydra là một trong những bước tiến quan trọng nhất trong chiến l
 ### Tóm tắt
 
 - Hydra giải quyết triệt để **bottleneck Layer-1**
-- Mở ra ứng dụng mới:
-  - DeFi, NFT, Gaming
-  - IoT, SocialFi
+- Mở ra ứng dụng mới: DeFi, NFT, Gaming, IoT, SocialFi, ...
 - Giữ nguyên nền tảng: **bảo mật, phi tập trung, nghiên cứu khoa học**
 - Sẵn sàng cho **tương lai hàng tỷ giao dịch/ngày**
 
