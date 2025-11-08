@@ -18,6 +18,86 @@
 
 # Giới Thiệu
 
+---
+
+## **Hydra là gì?**
+
+**Hydra** là **giải pháp mở rộng Layer-2 chính thức và tiên phong của Cardano**, được xây dựng để **loại bỏ hoàn toàn các giới hạn về tốc độ và chi phí** của blockchain Layer-1 — **mà không đánh đổi bảo mật hay tính phi tập trung**.
+
+> _“Hydra không phải là sidechain. Đây là **isomorphic state channel** — mở rộng Cardano một cách tự nhiên, an toàn và hiệu quả.”_  
+> — **IOG Research (2019–2025)**
+
+---
+
+## **Tại sao cần Hydra?**
+
+| Vấn đề Layer-1 (Cardano)   | Hậu quả                         | Hydra giải quyết như thế nào?                |
+| -------------------------- | ------------------------------- | -------------------------------------------- |
+| **~250 TPS**               | Không đủ cho ứng dụng đại chúng | **>10.000 TPS/Head** (đã thử nghiệm mainnet) |
+| **Block time ~20 giây**    | Không real-time                 | **<100ms xác nhận**                          |
+| **Phí tăng khi tắc nghẽn** | UX kém                          | **~0.001–0.01 ADA/Head mở/đóng**             |
+| **Không scale tuyến tính** | Bottleneck                      | **Hàng nghìn Head song song**                |
+
+> **Hydra = Layer-2 “tự nhiên nhất” cho Cardano** — không cần hard fork, không cần bridge, không cần ZK-proof hay fraud-proof.
+
+---
+
+## **Mục tiêu của tài liệu này**
+
+Sau khi hoàn thành, bạn sẽ:
+
+| Mục tiêu                            | Chi tiết                                            |
+| ----------------------------------- | --------------------------------------------------- |
+| **1. Hiểu rõ môi trường cần thiết** | Cardano Node 10.5.1+, Ubuntu 22.04, socket, mạng    |
+| **2. Cài đặt Hydra Node 1.0.0**     | Tải binary, thêm PATH, kiểm tra version             |
+| **3. Tạo khóa & cấu hình**          | Cardano keys (fuel + funds), Hydra keys (off-chain) |
+| **4. Chạy 2 node (Alice + Bob)**    | Kết nối P2P localhost, API WebSocket                |
+| **5. Kiểm tra kết nối thành công**  | `networkConnected: true`, `peersInfo`               |
+| **6. Sẵn sàng mở Head**             | Chuẩn bị cho `init`, `commit`, `newtx`, `close`     |
+
+---
+
+## **Đối tượng hướng đến**
+
+| Người đọc             | Phù hợp?                         |
+| --------------------- | -------------------------------- |
+| **Developer Cardano** | Rất phù hợp                      |
+| **dApp Builder**      | Rất phù hợp                      |
+| **Node Operator**     | Rất phù hợp                      |
+| **Người mới bắt đầu** | Phù hợp (có hướng dẫn từng bước) |
+
+> **Không cần biên dịch từ source** — dùng **binary chính thức**  
+> **Không cần VPS mạnh** — chạy được trên máy local (test)
+
+---
+
+## **Yêu cầu hệ thống (tối thiểu)**
+
+| Yêu cầu          | Khuyến nghị                     |
+| ---------------- | ------------------------------- |
+| **OS**           | Ubuntu 22.04 LTS                |
+| **CPU**          | 2 cores                         |
+| **RAM**          | 4 GB                            |
+| **Disk**         | 50 GB (cho Cardano Node)        |
+| **Mạng**         | Public IP hoặc localhost (test) |
+| **Cardano Node** | v10.5.1+, đã **đồng bộ 100%**   |
+
+---
+
+## **Kiến trúc tổng quan (bạn sẽ xây dựng)**
+
+````mermaid
+graph TD
+    A[Cardano Node<br>(Layer-1)] -->|IPC Socket| B[Hydra Node Alice]
+    A -->|IPC Socket| C[Hydra Node Bob]
+    B <-->|P2P (5001 ↔ 5002)| C
+    B -->|WebSocket API 4001| D[dApp / TUI]
+    C -->|WebSocket API 4002| D
+    B & C -->|Multisig| E[Hydra Head<br>(Off-chain Ledger)]
+    E -->|Close/Fanout| A
+
+  ````
+
 # Chuẩn Bị Môi Trường
 
 ## 1. Kiểm Tra Cardano Node Đang Chạy
@@ -26,7 +106,7 @@ Chạy lệnh kiểm tra tip của node:
 
 ```bash
 cardano-cli query tip --testnet-magic 2
-```
+````
 
 Kết quả mong đợi (đã đồng bộ):
 
