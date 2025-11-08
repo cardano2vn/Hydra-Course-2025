@@ -18,8 +18,6 @@
 
 # Giới Thiệu
 
----
-
 ## **Hydra là gì?**
 
 **Hydra** là **giải pháp mở rộng Layer-2 chính thức và tiên phong của Cardano**, được xây dựng để **loại bỏ hoàn toàn các giới hạn về tốc độ và chi phí** của blockchain Layer-1 — **mà không đánh đổi bảo mật hay tính phi tập trung**.
@@ -83,20 +81,6 @@ Sau khi hoàn thành, bạn sẽ:
 | **Cardano Node** | v10.5.1+, đã **đồng bộ 100%**   |
 
 ---
-
-## **Kiến trúc tổng quan (bạn sẽ xây dựng)**
-
-````mermaid
-graph TD
-    A[Cardano Node<br>(Layer-1)] -->|IPC Socket| B[Hydra Node Alice]
-    A -->|IPC Socket| C[Hydra Node Bob]
-    B <-->|P2P (5001 ↔ 5002)| C
-    B -->|WebSocket API 4001| D[dApp / TUI]
-    C -->|WebSocket API 4002| D
-    B & C -->|Multisig| E[Hydra Head<br>(Off-chain Ledger)]
-    E -->|Close/Fanout| A
-
-  ````
 
 # Chuẩn Bị Môi Trường
 
