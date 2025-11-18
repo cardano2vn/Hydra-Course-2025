@@ -18,29 +18,101 @@
 
 # Khởi động Head (Initial Head)
 
+> **Mục tiêu**: Khởi tạo một Hydra Head mới với một `headId` duy nhất, đạt được đồng thuận giữa tất cả participant, và chuyển trạng thái từ `Idle` → `HeadIsInitializing` → sẵn sàng để **Commit UTxO**.
+
+> **Ngữ cảnh ngắn gọn**: Hydra Head là một channel off-chain giữa những participant trên mạng Cardano. Trước khi commit tiền vào Head, Head phải được khởi tạo thành công và tất cả participant phải thỏa thuận tham gia.
+
+---
+
+## Kiểm tra điều kiện tiên quyết (Trước khi gửi Init)
+
+**Ý tưởng**: Nếu một node không chạy, không kết nối được P2P, hoặc API bị lỗi, lệnh `Init` sẽ không khởi tạo Head. Ta kiểm tra từng mục một cách tuần tự.
+
+### 1. Node đang chạy
+
+- **Mục đích**: Xác nhận các tiến trình `hydra-node` (mỗi participant một tiến trình) đang hoạt động trên máy.
+- **Lệnh**:
+
+```bash
+ps aux | grep hydra-node
+
+# Kết Quả Đạt Được
+root       12000  6.5  1.0 1073854160 132680 pts/3 Sl+ Nov17  92:48 hydra-node --node-id bob-node2 --persistence-dir persistence-bob2 --cardano-signing-key credentials/bob-node.sk --hydra-signing-key credentials/bob-hydra.sk --hydra-scripts-tx-id 08fea9f21fec08d47dd56cd632ece001616b247f6e2e893f98dcf1e69ddb58d0,c6ba286b501c076ee494b4686e681c5aab8f903d930e8366dcbca1c3530264ee,ed6b3ff639fb99b18916dd14b9837d893b1a053af38a27f604a7cdf543b86f6c --ledger-protocol-parameters protocol-parameters.json --testnet-magic 2 --node-socket ./node.socket --api-port 4002 --listen 127.0.0.1:5002 --api-host 0.0.0.0 --peer 127.0.0.1:5001 --hydra-verification-key credentials/alice-hydra.vk --cardano-verification-key credentials/alice-node.vk
+root       37955 17.0  1.1 1073854020 140924 pts/2 Sl+ 08:24   6:22 hydra-node --node-id alice-node2 --persistence-dir persistence-alice2 --cardano-signing-key credentials/alice-node.sk --hydra-signing-key credentials/alice-hydra.sk --hydra-scripts-tx-id 08fea9f21fec08d47dd56cd632ece001616b247f6e2e893f98dcf1e69ddb58d0,c6ba286b501c076ee494b4686e681c5aab8f903d930e8366dcbca1c3530264ee,ed6b3ff639fb99b18916dd14b9837d893b1a053af38a27f604a7cdf543b86f6c --ledger-protocol-parameters protocol-parameters.json --testnet-magic 2 --node-socket ./node.socket --api-port 4001 --listen 127.0.0.1:5001 --api-host 0.0.0.0 --peer 127.0.0.1:5002 --hydra-verification-key credentials/bob-hydra.vk --cardano-verification-key credentials/bob-node.vk
+root       38434  0.0  0.0   7080  2048 pts/0    S+   09:01   0:00 grep --color=auto hydra-node
+```
+
+- **Giải thích**: `ps aux` liệt kê tiến trình, `grep hydra-node` lọc tiến trình tên chứa `hydra-node`.
+- **Kết quả mong đợi**: Bạn sẽ thấy ít nhất 2 tiến trình nếu đang chạy ví dụ `Alice` và `Bob`. Dòng tiến trình thường chứa cấu hình hoặc file config mà node dùng (phần này giúp xác định node nào đang sử dụng port nào).
+- **Nếu không thấy**: Kiểm tra cách bạn khởi node (systemd/service, docker, hay chạy trực tiếp). Khởi lại tiến trình và xem log.
+
+### 2. API HTTP (health)
+
+- **Mục đích**: Đảm bảo HTTP API nội bộ của hydra-node đang trả lời.
+- **Lệnh**:
+
+```bash
+curl -s http://127.0.0.1:4001/health | jq
+```
+
+- **Giải thích**: Endpoint `/health` thường trả `{"status":"ok"}`. Tham số `-s` cho `curl` im lặng, `jq` định dạng JSON.
+- **Nếu lỗi**: Có thể hydra-node chưa bind port, service đang crash, hoặc port khác (4002, 4003...). Kiểm tra file cấu hình hoặc log.
+
+### 3. Kết nối P2P / Network
+
+- **Mục đích**: Hydra nodes liên lạc với nhau qua P2P; nếu network không kết nối Head không thể khởi tạo đồng thuận.
+- **Lệnh**:
+
+```bash
+websocat ws://127.0.0.1:4001 | jq '.networkInfo'
+```
+
+- **Giải thích**: Gửi kết nối WebSocket tới node và quan sát trường `networkInfo` trong luồng sự kiện. Trường `"networkConnected": true` cho biết node đã kết nối với peers.
+- **Nếu `false`**: Kiểm tra cấu hình peer discovery, địa chỉ peers, hoặc firewall.
+
+### 4. Trạng thái Head hiện tại
+
+- **Mục đích**: Đảm bảo Head vẫn ở trạng thái `Idle` trước khi gửi `Init` (nếu đã có head đang chạy, server có thể từ chối tạo head mới hoặc hành xử khác tuỳ triển khai).
+- **Lệnh**:
+
+```bash
+websocat ws://127.0.0.1:4001 | jq 'select(.tag == "Greetings")'
+```
+
+- **Giải thích**: Thao tác này lắng nghe luồng sự kiện WebSocket và lọc message có `tag` là `Greetings` (message khởi tạo/giới thiệu node thường chứa `headStatus`).
+- **Kết quả mong đợi**: `"headStatus": "Idle"` — node sẵn sàng khởi tạo Head.
+
+---
+
+## Gửi lệnh Init
+
+### 1. Lắng nghe luồng WebSocket (từ một terminal)
+
 ```bash
 websocat ws://127.0.0.1:4001 | jq
 ```
 
-or
+- **Mục đích**: Xem tất cả sự kiện từ node trong thời gian thực — rất hữu ích để quan sát phản hồi ngay sau khi gửi `Init`.
+- **Lưu ý**: Bạn có thể mở nhiều terminal cho từng participant (4001, 4002, ...).
 
-```bash
-websocat ws://127.0.0.1:4002 | jq
-```
-
-```bash
-{ "tag": "Init" }
-```
-
-or
+### 2. Gửi lệnh Init bằng WebSocket (một lần)
 
 ```bash
 echo '{ "tag": "Init" }' | websocat "ws://127.0.0.1:4001?history=no"
 ```
 
-Kết quả
+- **Giải thích**:
+  - `echo '{ "tag": "Init" }'` tạo payload JSON.
+  - `websocat "ws://... ?history=no"` gửi một kết nối WebSocket để gửi payload và thoát ngay (không giữ lịch sử luồng). Một số hydra-node có cờ history/no-history để tránh gửi toàn bộ log trước đó.
+- **Thay thế**: Nếu bạn dùng `websocat` tương tác (stdin), có thể paste JSON vào và gửi.
 
-```bash
+---
+
+## Phản hồi và giải thích từng trường
+
+Dưới đây là một **ví dụ điển hình** khi `Init` thành công. (Bản thân giá trị là ví dụ — `headId` và `vkey` sẽ khác thực tế.)
+
+```json
 {
   "headId": "200264c48a64b9731b5d4fdb57ae1f1f9314c8a2f74e2b8475281156",
   "parties": [
@@ -56,6 +128,39 @@ Kết quả
   "timestamp": "2025-11-06T05:11:58.58827555Z"
 }
 ```
+
+### Giải thích từng trường:
+
+- `headId`:
+
+  - Là **ID duy nhất** của Head vừa tạo. Được tạo từ hash/identifier nội bộ của hydra-node.
+  - Dùng để tham chiếu Head sau này (commit, close, snapshot...).
+
+- `parties`:
+
+  - Danh sách public keys (vkey) của các participant đã đồng ý tham gia Head. Thứ tự có thể quan trọng tuỳ triển khai (ví dụ: thứ tự quyết định UTxO distribution ban đầu trong một số protocol).
+  - Các `vkey` giúp xác minh chữ ký khi tiến hành commit hoặc giao dịch on-head.
+
+- `seq`:
+
+  - Số sequence (số phiên/step nội bộ) — thể hiện phiên bản hiện tại của trạng thái head. Dùng để track changes và đảm bảo không có race condition.
+
+- `tag`:
+
+  - Loại message/trạng thái. `HeadIsInitializing` thông báo rằng Head vừa được khởi tạo và hiện đang trong giai đoạn đồng bộ nội bộ trước khi cho phép `Commit`.
+
+- `timestamp`:
+  - Thời điểm node báo trạng thái (UTC, theo chuẩn ISO 8601). Hữu ích cho audit và debug (so sánh logs giữa các node).
+
+---
+
+## Kiểm tra sau khi nhận `HeadIsInitializing`
+
+1. **So sánh headId trên tất cả participant**: Mở luồng WebSocket trên từng máy và xác nhận mọi node báo cùng `headId`.
+2. **Xác nhận parties**: Kiểm tra `vkey` có trùng khớp với danh sách participant mà bạn mong đợi (Alice/Bob/...).
+3. **Chờ trạng thái sẵn sàng để Commit**: Một số triển khai sẽ gửi một message tiếp theo như `ReadyToCommit` hoặc chuyển trạng thái sang `Open`. Đọc tài liệu node của bạn để biết tên message chính xác.
+
+---
 
 # Cam kết tiền cho Head
 
@@ -113,6 +218,37 @@ curl -X POST 127.0.0.1:4001/commit \
   --data @alice-commit-utxo.json \
   > alice-commit-tx.json
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 cat alice-commit-tx.json
 
