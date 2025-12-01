@@ -786,7 +786,3 @@ echo '{ "tag": "Close" }' | websocat "ws://127.0.0.1:4001?history=no"
 ```bash
 echo '{ "tag": "Fanout" }' | websocat "ws://127.0.0.1:4001?history=no"
 ```
-
-```bash
-
-```
