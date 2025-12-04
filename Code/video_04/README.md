@@ -196,7 +196,7 @@ SHA256 có trong cùng trang phát hành.
 Thiết lập biến phiên bản để dễ quản lý và nâng cấp sau này.
 
 ```bash
-CARDANO_VERSION="10.5.1"
+CARDANO_VERSION="10.5.2"
 ```
 
 ### Tải binary từ GitHub Releases
