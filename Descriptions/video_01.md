@@ -1,7 +1,7 @@
 ### Title:
 
 ```
-01 – Introduction to Hydra – Exploring the Future of Cardano’s Layer-2 Scaling and Practical Use Cases
+01 – Introduction to Hydra – [Hydra Course 2025]
 ```
 
 ### Description:
@@ -23,12 +23,9 @@ Bạn sẽ nắm được bức tranh tổng quan về lý do Hydra ra đời, c
 Series sẽ hướng dẫn từ kiến trúc, môi trường dev, triển khai node, đến demo DApp chạy trên Hydra.
 
 📘 Tài liệu mô tả & nguồn tham khảo:
-- Hydra Official Repo: https://github.com/input-output-hk/hydra
-- Hydra Head Protocol Paper (IOG Research)
-- Cardano Node Docs: https://docs.cardano.org
-- Hydra Tutorials & Samples: https://hydra.family/head-protocol
-- Cardano CIP liên quan: CIP-1694, CIP về L2 & governance
-- Hydra Roadmap & Releases: https://github.com/input-output-hk/hydra/releases
+- lms: [lms for introduction to hydra](https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/introduction-to-hydra-exploring-the-future-of-cardanos-layer-2-scaling-and-practical-use-cases/)
+- github: [github for introduction to hydra](https://github.com/cardano2vn/Hydra-Course-2025/tree/main/Code/video_01)
+- article: [article for introduction to hydra](https://hydra-tutorial.vercel.app/document/chapter-01/video-01)
 
 Nếu bạn thấy nội dung hữu ích, hãy Like – Subscribe – Share để ủng hộ kênh! 💙
 #Cardano #Hydra #Layer2 #Blockchain #Scaling #DApp #Web3 #Tutorial
