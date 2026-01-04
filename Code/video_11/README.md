@@ -37,7 +37,7 @@ Dự án trong thư mục `contract/` chứa một **template validator Aiken** 
 
 ---
 
-## Cấu Trúc Thư Mục (Recommended)
+## Cấu Trúc Thư Mục 
 
 Gợi ý tổ chức cho dự án smart contract + frontend + test:
 
@@ -87,16 +87,9 @@ tipjar/
 ### Bắt buộc
 
 - **OS**: Ubuntu 22.04 / WSL2 (Windows) / macOS
-- **Node.js**: 18+ (cho frontend)
+- **Node.js**: 20+ (cho frontend)
 - **Aiken**: 1.1.5+ (toolchain Plutus scripting)
 - **Git**: 2.30+
-- **Build tools**: `build-essential`, `curl`, `ca-certificates`
-
-### Tùy chọn (nếu test tích hợp)
-
-- **Cardano Node**: 10.6.1+ (đã sync 100%, có `node.socket`)
-- **Mithril Client**: để tải snapshot nhanh
-- **cardano-cli**: 10.11+ (interact with node & sign tx)
 
 ---
 
