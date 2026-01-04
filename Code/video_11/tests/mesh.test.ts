@@ -20,9 +20,40 @@ describe("This is testcase Lock and Unlock with Helloworld Validator", function 
     });
     jest.setTimeout(600000000);
 
-    test("Lock", async function () {});
+    test("Lock", async function () {
+        return;
+        const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
+            meshWallet: meshWallet,
+        });
+        const unsignedTx: string = await meshTxBuilder.lock();
 
-    test("Un Lock", async function () {});
+        const signedTx = await meshWallet.signTx(unsignedTx, true);
+        console.log(signedTx);
+        return;
+        const txHash = await meshWallet.submitTx(signedTx);
+        await new Promise<void>(function (resolve, reject) {
+            blockfrostProvider.onTxConfirmed(txHash, () => {
+                console.log("https://preview.cexplorer.io/tx/" + txHash);
+                resolve();
+            });
+        });
+    });
 
-    test("Removes", async function () {});
+    test("Un Lock", async function () {
+        return;
+        const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
+            meshWallet: meshWallet,
+        });
+        const unsignedTx: string = await meshTxBuilder.unlock();
+
+        const signedTx = await meshWallet.signTx(unsignedTx, true);
+        const txHash = await meshWallet.submitTx(signedTx);
+        await new Promise<void>(function (resolve, reject) {
+            blockfrostProvider.onTxConfirmed(txHash, () => {
+                console.log("https://preview.cexplorer.io/tx/" + txHash);
+                resolve();
+            });
+        });
+    });
+
 });
