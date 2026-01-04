@@ -20,6 +20,7 @@
 Hướng dẫn này giúp bạn:
 
 - **Cài đặt Aiken** — toolchain viết/biên dịch smart contract Cardano bằng ngôn ngữ Aiken.
+- **Cài đặt Bun** — JavaScript/TypeScript Runtime
 - **Tổ chức cấu trúc thư mục hợp lý** — dễ maintain, test, CI/CD và tích hợp Hydra.
 - **Chuẩn bị dữ liệu mẫu (fixtures)** — fixtures UTxO, keys testnet, sample transaction để test nhanh.
 - **Chạy, build, test & deploy** — quy trình phát triển smart contract từ đầu đến cuối.
@@ -33,7 +34,6 @@ Dự án trong thư mục `contract/` chứa một **template validator Aiken** 
 - ✅ Cấu trúc modular: `validators/`, `lib/`, `env/` cho code organize tốt
 - ✅ Test framework tích hợp (Aiken test)
 - ✅ Blueprint JSON sinh tự động (dùng cho frontend: React, Mesh, Lucid…)
-- ✅ Hoàn toàn mã nguồn mở, dễ audit
 
 ---
 
@@ -42,10 +42,10 @@ Dự án trong thư mục `contract/` chứa một **template validator Aiken** 
 Gợi ý tổ chức cho dự án smart contract + frontend + test:
 
 ```
-project-root/
+tipjar/
 ├─ contract/                  # Dự án Aiken chính
 │  ├─ validators/             # Các validator .ak (placeholder.ak)
-│  │  └─ placeholder.ak       # Template: mint, spend, withdraw, governance
+│  │  └─ hello-world.ak       # Template: mint, spend, withdraw, governance
 │  ├─ lib/                    # Helper modules (utility functions)
 │  ├─ env/                    # Cấu hình môi trường (preview/preprod/mainnet)
 │  ├─ build/                  # Artifacts (generated) - IGNORE in git
