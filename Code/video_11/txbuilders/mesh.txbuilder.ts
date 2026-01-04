@@ -15,7 +15,7 @@ export class MeshTxBuilder extends MeshAdapter {
      *
      * @throws {Error} - Throws if wallet UTxOs or collateral cannot be retrieved.
      */
-    signup = async ({ assetName, metadata }: { assetName: string; metadata: Record<string, string | number> }): Promise<string> => {
+    lock = async ({ assetName, metadata }: { assetName: string; metadata: Record<string, string | number> }): Promise<string> => {
         const { utxos, collateral, walletAddress } = await this.getWalletForTx();
 
         const forgingScript = ForgeScript.withOneSignature(walletAddress);
@@ -67,7 +67,7 @@ export class MeshTxBuilder extends MeshAdapter {
      *
      * @throws {Error} - Throws if the asset UTxO is not found.
      */
-    signout = async ({ assetName }: { assetName: string }): Promise<string> => {
+    unlock = async ({ assetName }: { assetName: string }): Promise<string> => {
         const { utxos, collateral, walletAddress } = await this.getWalletForTx();
         const forgingScript = ForgeScript.withOneSignature(walletAddress);
         const policyId = resolveScriptHash(forgingScript);
@@ -95,37 +95,4 @@ export class MeshTxBuilder extends MeshAdapter {
         return await unsignedTx.complete();
     };
 
-    /**
-     * @description Remove all UTxOs stored at the script address and send their value back to the wallet.
-     * Commonly used for cleanup or contract state reset.
-     *
-     * @returns {Promise<string>} An unsigned transaction in CBOR hex format.
-     *
-     * @throws {Error} - Throws if UTxOs cannot be fetched or collateral is invalid.
-     */
-    remove = async (): Promise<string> => {
-        const { utxos, collateral, walletAddress } = await this.getWalletForTx();
-
-        const utxosAssets: Array<UTxO> = await this.fetcher.fetchAddressUTxOs(this.spendAddress);
-
-        const unsignedTx = this.meshTxBuilder;
-
-        utxosAssets.forEach((utxo) => {
-            unsignedTx
-                .spendingPlutusScriptV3()
-                .txIn(utxo.input.txHash, utxo.input.outputIndex)
-                .txInInlineDatumPresent()
-                .txInRedeemerValue(mConStr0([]))
-                .txInScript(this.spendScriptCbor)
-                .txOut(walletAddress, utxo.output.amount);
-        });
-
-        unsignedTx
-            .changeAddress(walletAddress)
-            .requiredSignerHash(deserializeAddress(walletAddress).pubKeyHash)
-            .selectUtxosFrom(utxos)
-            .txInCollateral(collateral.input.txHash, collateral.input.outputIndex, collateral.output.amount, collateral.output.address)
-            .setNetwork(APP_NETWORK);
-        return await unsignedTx.complete();
-    };
 }
