@@ -31,13 +31,12 @@ export class MeshTxBuilder extends MeshAdapter {
             )
             .changeAddress(await this.meshWallet.getChangeAddress())
             .selectUtxosFrom(utxos)
-            
             .setNetwork(APP_NETWORK);
 
         return await unsignedTx.complete();
     }
 
-    claim = async(): Promise<string> => {
-        const {utxos, walletAddress, collateral} = await this.getWalletForTx()
-    } 
+    // claim = async(): Promise<string> => {
+    //     const {utxos, walletAddress, collateral} = await this.getWalletForTx()
+    // } 
 }
