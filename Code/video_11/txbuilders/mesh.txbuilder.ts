@@ -13,6 +13,7 @@ export class MeshTxBuilder extends MeshAdapter {
                     quantity: "1000000"
                 }
             ])
+            .txOutDatumHashValue(mConStr0([deserializeAddress(walletAddress).pubKeyHash]))
             .selectUtxosFrom(utxos)
             .changeAddress(walletAddress)
             .requiredSignerHash(deserializeAddress(walletAddress).pubKeyHash)
@@ -23,7 +24,7 @@ export class MeshTxBuilder extends MeshAdapter {
 
     unlock = async (): Promise<string> => {
         const { utxos, collateral, walletAddress } = await this.getWalletForTx();
-        const utxo = await utxos[0];
+        const utxo = (await this.fetcher.fetchAddressUTxOs(this.spendAddress))[0];
         const unsignedTx = this.meshTxBuilder
             .spendingPlutusScript('V3')
             .txIn(
