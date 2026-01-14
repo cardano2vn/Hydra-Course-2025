@@ -1,4 +1,4 @@
-import { deserializeAddress, ForgeScript, mConStr0, resolveScriptHash, stringToHex, UTxO } from "@meshsdk/core";
+import { deserializeAddress, mConStr0, stringToHex } from "@meshsdk/core";
 import { MeshAdapter } from "@/adapters/mesh.adapter";
 import { APP_NETWORK } from "@/constants/enviroments.constant";
 
@@ -35,7 +35,8 @@ export class MeshTxBuilder extends MeshAdapter {
             )
             .txInScript(this.spendScriptCbor)
             .txInRedeemerValue(mConStr0([stringToHex("Hello, World!")]))
-            .txInDatumValue(mConStr0([deserializeAddress(walletAddress).pubKeyHash]))
+            .txInInlineDatumPresent()
+           
             .changeAddress(walletAddress)
             .requiredSignerHash(deserializeAddress(walletAddress).pubKeyHash)
             .selectUtxosFrom(utxos)
