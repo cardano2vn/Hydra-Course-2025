@@ -5,7 +5,6 @@ import {
     MeshTxBuilder,
     MeshWallet,
     PlutusScript,
-    resolveScriptHash,
     scriptAddress,
     serializeAddressObj,
     serializePlutusScript,
@@ -26,14 +25,10 @@ import { APP_NETWORK_ID } from "@/constants/enviroments.constant";
  * - Preparing data for transaction building
  */
 export class MeshAdapter {
-    public policyId: string;
     public spendAddress: string;
     protected spendCompileCode: string;
-    protected mintCompileCode: string;
     protected spendScriptCbor: string;
-    protected mintScriptCbor: string;
     protected spendScript: PlutusScript;
-    protected mintScript: PlutusScript;
     protected fetcher: IFetcher;
     protected meshWallet: MeshWallet;
     protected meshTxBuilder: MeshTxBuilder;
@@ -56,21 +51,15 @@ export class MeshAdapter {
             evaluator: blockfrostProvider,
         });
 
-        this.mintCompileCode = this.readValidator(plutus as Plutus, title.mint);
-        this.spendCompileCode = this.readValidator(plutus as Plutus, title.store);
+        this.spendCompileCode = this.readValidator(plutus as Plutus, title.spend);
 
         this.spendScriptCbor = applyParamsToScript(this.spendCompileCode, []);
-        this.mintScriptCbor = applyParamsToScript(this.mintCompileCode, []);
 
         this.spendScript = {
             code: this.spendScriptCbor,
             version: "V3",
         };
 
-        this.mintScript = {
-            code: this.mintScriptCbor,
-            version: "V3",
-        };
 
         this.spendAddress = serializeAddressObj(
             scriptAddress(
@@ -80,8 +69,6 @@ export class MeshAdapter {
             ),
             APP_NETWORK_ID,
         );
-
-        this.policyId = resolveScriptHash(this.mintScriptCbor, "V3");
     }
 
     /**

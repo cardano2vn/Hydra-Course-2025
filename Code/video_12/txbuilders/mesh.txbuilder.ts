@@ -24,20 +24,19 @@ export class MeshTxBuilder extends MeshAdapter {
             .txOutInlineDatumValue(
                 mConStr0([
                     JSON.stringify({
-                        walletAddress: await this.meshWallet.getChangeAddress(),
+                        walletAddress: walletAddress,
                         datetime: Date.now().toString(),
                     }),
                 ]),
             )
-            .changeAddress(await this.meshWallet.getChangeAddress())
+            .changeAddress(walletAddress)
             .selectUtxosFrom(utxos)
-            
             .setNetwork(APP_NETWORK);
 
         return await unsignedTx.complete();
     }
 
-    claim = async(): Promise<string> => {
-        const {utxos, walletAddress, collateral} = await this.getWalletForTx()
-    } 
+    // claim = async(): Promise<string> => {
+    //     const {utxos, walletAddress, collateral} = await this.getWalletForTx()
+    // } 
 }

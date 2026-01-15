@@ -5,7 +5,6 @@ import {
     MeshTxBuilder,
     MeshWallet,
     PlutusScript,
-    resolveScriptHash,
     scriptAddress,
     serializeAddressObj,
     serializePlutusScript,
