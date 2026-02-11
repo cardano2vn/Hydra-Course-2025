@@ -145,13 +145,13 @@ find / -name "node.socket" 2>/dev/null | head -5
 2. Export tạm thời
 
 ```bash
-export CARDANO_NODE_SOCKET_PATH=/home/ubuntu/cardano-node/relay/db/node.socket
+export CARDANO_NODE_SOCKET_PATH=./node.socket
 ```
 
 3. Lưu vĩnh viễn vào `~/.bashrc`:
 
 ```bash
-echo 'export CARDANO_NODE_SOCKET_PATH=/home/ubuntu/cardano-node/relay/db/node.socket' >> ~/.bashrc
+echo 'export CARDANO_NODE_SOCKET_PATH=./node.socket' >> ~/.bashrc
 source ~/.bashrc
 ```
 
