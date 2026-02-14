@@ -491,3 +491,21 @@ echo "Building tx from UTxO: $TX_HASH#$TX_IX (amount: $AMOUNT lovelace)"
    - Aiken code siêu ngắn & dễ audit.
 
 ---
+
+<div align="center">
+
+## Kết Luận
+
+Bạn đã sẵn sàng phát triển smart contract Hydra!  
+
+Thay `todo` trong `placeholder.ak` bằng logic của bạn, chạy `aiken check && aiken build`, rồi tích hợp vào frontend.  
+
+Cộng đồng Cardano Việt Nam luôn sẵn sàng hỗ trợ.  
+
+**Chúc bạn sớm triển khai thành công dApp đầu tiên trên Hydra Head!**
+
+Trân trọng,  
+**Nguyễn Duy Khánh**  
+Hydra Course 2025 – Cardano2VN
+
+</div>
