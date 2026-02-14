@@ -6,7 +6,7 @@
 
 **Hướng dẫn đầy đủ: cài Aiken, cấu trúc thư mục, chuẩn bị dữ liệu mẫu, và triển khai**
 
-[![Aiken](https://img.shields.io/badge/Aiken-1.1.5+-0d8c5a?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMkwyIDEySDIyTDEyIDIyWiIvPjwvc3ZnPg==)](https://aiken-lang.org)
+[![Aiken](https://img.shields.io/badge/Aiken-1.1.21+-0d8c5a?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMkwyIDEySDIyTDEyIDIyWiIvPjwvc3ZnPg==)](https://aiken-lang.org)
 [![Hydra Ready](https://img.shields.io/badge/Hydra-1.2.0-ready-success)](https://hydra.family)
 [![Cardano Node](https://img.shields.io/badge/Cardano%20Node-10.6.1+-blue)](https://github.com/IntersectMBO/cardano-node)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
@@ -19,27 +19,27 @@
 
 Hướng dẫn này giúp bạn:
 
-- **Cài đặt Aiken** — toolchain viết/biên dịch smart contract Cardano bằng ngôn ngữ Aiken.
 - **Cài đặt Bun** — JavaScript/TypeScript Runtime
+- **Cài đặt Aiken** — toolchain viết/biên dịch smart contract Cardano bằng ngôn ngữ Aiken.
 - **Tổ chức cấu trúc thư mục hợp lý** — dễ maintain, test, CI/CD và tích hợp Hydra.
 - **Chuẩn bị dữ liệu mẫu (fixtures)** — fixtures UTxO, keys testnet, sample transaction để test nhanh.
 - **Chạy, build, test & deploy** — quy trình phát triển smart contract từ đầu đến cuối.
 
-Dự án trong thư mục `contract/` chứa một **template validator Aiken** (placeholder.ak) hỗ trợ nhiều purpose: mint, spend, withdraw, governance. Bạn sẽ triển khai logic thực tế theo yêu cầu ứng dụng (ví dụ: tự động commit ADA vào Hydra Head, kiểm tra chữ ký, quản lý timelock, v.v.).
+Dự án trong thư mục `contract/` chứa một **template validator Aiken** hỗ trợ nhiều purpose: mint, spend, withdraw, governance. Bạn sẽ triển khai logic thực tế theo yêu cầu ứng dụng (ví dụ: tự động commit ADA vào Hydra Head, kiểm tra chữ ký, quản lý timelock, v.v.).
 
-## Tính Năng & Mục Tiêu
+## Mục Tiêu
 
-- ✅ Template validator Aiken đa mục đích (multi-purpose)
-- ✅ Hỗ trợ Plutus v3 (compatible với Hydra & mainnet)
+- ✅ Template validator Aiken đa mục đích.
+- ✅ Hỗ trợ Plutus v3 (compatible với Hydra & mainnet).
 - ✅ Cấu trúc modular: `validators/`, `lib/`, `env/` cho code organize tốt
-- ✅ Test framework tích hợp (Aiken test)
-- ✅ Blueprint JSON sinh tự động (dùng cho frontend: React, Mesh, Lucid…)
+- ✅ Test framework tích hợp (Aiken test).
+- ✅ Blueprint JSON sinh tự động (dùng cho frontend: React, Mesh, Lucid…).
 
 ---
 
-## Cấu Trúc Thư Mục 
+## Cấu Trúc Thư Mục
 
-Gợi ý tổ chức cho dự án smart contract + frontend + test:
+Gợi ý tổ chức cho dự án on-chain + off-chain + test:
 
 ```
 tipjar/
@@ -54,26 +54,15 @@ tipjar/
 │  ├─ aiken.toml              # Config: compiler, plutus version, dependencies
 │  ├─ aiken.lock              # Lock file (auto-generated)
 │  └─ plutus.json             # Generated: compiled bytecode & schema
-├─ app/                       # Frontend (Next.js)
-│  ├─ page.tsx                # Landing page
+├─ tests/                     # Frontend (Next.js)
+│  ├─ mesh.test.ts                # Landing page
 │  ├─ layout.tsx              # Root layout
 │  ├─ globals.css             # Styling
 │  └─ ...
-├─ samples/                   # Dữ liệu mẫu (fixtures)
-│  ├─ utxos/
-│  │  ├─ alice_utxo.json      # UTxO mẫu
-│  │  └─ bob_utxo.json
-│  ├─ keys/
-│  │  ├─ alice.vkey           # Public key
-│  │  ├─ alice.skey           # Private key (NEVER commit!)
-│  │  ├─ bob.vkey
-│  │  └─ bob.skey
-│  └─ txs/
-│     ├─ commit_sample.json   # Mẫu transaction commit
-│     └─ close_sample.json    # Mẫu transaction close
-├─ scripts/                   # Helper scripts
-│  ├─ build-and-test.sh       # Build + test automations
-│  └─ deploy.sh               # Deploy helpers
+├─ txbuilder/                 # Helper scripts
+│  └─ mesh.txbuilder.ts       # Deploy helpers
+├─ adapters/                 # Helper scripts
+│  └─ mesh.adapter.ts       # Deploy helpers
 ├─ README.md                  # Hướng dẫn này
 ├─ package.json               # Node.js dependencies
 ├─ tsconfig.json              # TypeScript config
@@ -87,9 +76,8 @@ tipjar/
 ### Bắt buộc
 
 - **OS**: Ubuntu 22.04 / WSL2 (Windows) / macOS
-- **Node.js**: 20+ (cho frontend)
+- **Bun**: 20+ (cho frontend)
 - **Aiken**: 1.1.5+ (toolchain Plutus scripting)
-- **Git**: 2.30+
 
 ---
 
@@ -330,7 +318,6 @@ Cấu hình môi trường (preview, preprod, mainnet). Hiện empty; dùng đ�
 ### Workflow cơ bản:
 
 1. **Viết logic** trong `validators/*.ak`
-
    - Thay `todo` bằng biểu thức Aiken thực tế.
    - Ví dụ: `(redeemer == 42) && (length(signers) > 0)` → True = OK, False = reject.
 
@@ -361,7 +348,6 @@ Cấu hình môi trường (preview, preprod, mainnet). Hiện empty; dùng đ�
    - Output: `build/default/`, `plutus.json`
 
 5. **Test integration** (với node/CLI)
-
    - Dùng `cardano-cli` + node socket để:
      - Tạo transaction → attach script → sign → submit.
      - Verify script execution trên blockchain.
@@ -484,23 +470,19 @@ echo "Building tx from UTxO: $TX_HASH#$TX_IX (amount: $AMOUNT lovelace)"
 ## Lưu Ý Bảo Mật & Thực Hành Tốt
 
 1. **Không commit private keys**
-
    - `*.skey` file phải trong `.gitignore`.
    - Dùng env vars hoặc secrets manager cho CI.
 
 2. **Kiểm tra phiên bản**
-
    - Ensure `aiken`, `cardano-node`, `cardano-cli` versions tương thích.
    - Check `aiken.toml` vs compiler version mà bạn cài.
 
 3. **Test trước deploy**
-
    - Chạy `aiken check` & `aiken build` → không lỗi.
    - Viết test unit → `aiken check` auto-run tests.
    - Test integration trên testnet trước mainnet.
 
 4. **Backup & version control**
-
    - Git commit khi source code stable.
    - Tag releases (v1.0.0, v1.1.0).
 
@@ -509,4 +491,3 @@ echo "Building tx from UTxO: $TX_HASH#$TX_IX (amount: $AMOUNT lovelace)"
    - Aiken code siêu ngắn & dễ audit.
 
 ---
-
