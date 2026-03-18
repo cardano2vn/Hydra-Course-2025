@@ -145,13 +145,13 @@ find / -name "node.socket" 2>/dev/null | head -5
 2. Export tạm thời
 
 ```bash
-export CARDANO_NODE_SOCKET_PATH=/home/ubuntu/cardano-node/relay/db/node.socket
+export CARDANO_NODE_SOCKET_PATH=./node.socket
 ```
 
 3. Lưu vĩnh viễn vào `~/.bashrc`:
 
 ```bash
-echo 'export CARDANO_NODE_SOCKET_PATH=/home/ubuntu/cardano-node/relay/db/node.socket' >> ~/.bashrc
+echo 'export CARDANO_NODE_SOCKET_PATH=./node.socket' >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -507,10 +507,10 @@ credentials/
 ### 2.1. Dán lần lượt các địa chỉ
 
 ```bash
-cat credentials/alice-node.addr
-cat credentials/alice-funds.addr
-cat credentials/bob-node.addr
-cat credentials/bob-funds.addr
+cat credentials/alice-node.addr && echo &&
+cat credentials/alice-funds.addr && echo &&
+cat credentials/bob-node.addr && echo &&
+cat credentials/bob-funds.addr && echo &&
 ```
 
 ### 2.1. Nhận ít nhất 100 tADA mỗi địa chỉ
