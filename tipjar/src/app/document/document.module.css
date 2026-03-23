@@ -1,0 +1,356 @@
+/* ── Page Shell ─────────────────────────────────── */
+.docPage {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: flex-start;
+  background: linear-gradient(135deg, #020618 0%, #0f172b 50%, #1d293d 100%);
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+}
+
+/* ── Docs Layout (accounts for left nav sidebar) ── */
+.docsLayout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  padding-left: 286px;
+}
+
+/* ── Page Row (article + right TOC) ──────────────── */
+.docsPage {
+  display: flex;
+  max-width: 1200px;
+  padding-right: 286px;
+  justify-content: center;
+  align-items: flex-start;
+  align-self: stretch;
+}
+
+/* ── Article ─────────────────────────────────────── */
+.article {
+  display: flex;
+  padding: 48px 32px 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1 0 0;
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* ── Page Title ──────────────────────────────────── */
+.pageTitle {
+  align-self: stretch;
+  color: #fafafa;
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 42px;
+  margin: 0;
+  padding-bottom: 0.6px;
+}
+
+/* ── Page Subtitle ───────────────────────────────── */
+.pageSubtitle {
+  align-self: stretch;
+  color: #8b9dc1;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 28px;
+  margin: 0;
+  padding-bottom: 32px;
+}
+
+/* ── Action Buttons Row ──────────────────────────── */
+.actionBar {
+  display: flex;
+  padding: 8px 0 24px;
+  align-items: center;
+  gap: 8px;
+  align-self: stretch;
+  border-bottom: 0.8px solid rgba(255, 255, 255, 0.1);
+}
+
+.actionBtn {
+  display: flex;
+  padding: 6px 8px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1f2c47;
+  color: #d1dffa;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.actionBtn:hover {
+  background: #253452;
+}
+
+/* ── Prose Content ───────────────────────────────── */
+.prose {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: 0;
+  padding-bottom: 64px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.section:first-child {
+  margin-top: 24px;
+}
+
+/* ── Headings ────────────────────────────────────── */
+.sectionH2 {
+  color: #e9eef9;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 32px;
+  margin: 0;
+  scroll-margin-top: 80px;
+}
+
+.sectionH3 {
+  color: #e9eef9;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 32px;
+  margin: 0;
+  scroll-margin-top: 80px;
+}
+
+/* ── Body Text ───────────────────────────────────── */
+.bodyText {
+  align-self: stretch;
+  color: rgba(233, 238, 249, 0.9);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 28px;
+  margin: 0;
+}
+
+.boldWord {
+  font-weight: 600;
+  color: #e9eef9;
+}
+
+/* ── Code Block ──────────────────────────────────── */
+.codeBlock {
+  display: flex;
+  align-self: stretch;
+  flex-direction: column;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(17, 31, 60, 0.4);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.codeScrollArea {
+  display: flex;
+  max-height: 600px;
+  padding: 14px 0;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: auto;
+}
+
+.codeInner {
+  display: flex;
+  min-width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.codeLine {
+  display: flex;
+  min-height: 18.563px;
+  padding: 0 32px 0 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  white-space: pre;
+}
+
+.codeLineEmpty {
+  min-height: 18.563px;
+  align-self: stretch;
+}
+
+.codeText {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18.57px;
+  font-family: 'Geist Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ── Syntax token colors ─────────────────────────── */
+.tokenKeyword   { color: #f97583; }
+.tokenString    { color: #9ecbff; }
+.tokenDefault   { color: #e1e4e8; }
+.tokenPurple    { color: #b392f0; }
+.tokenOrange    { color: #ffab70; }
+.tokenBlue      { color: #79b8ff; }
+.tokenComment   { color: #6a737d; }
+
+/* ── Copy Button ─────────────────────────────────── */
+.copyBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+  color: #8b9dc1;
+}
+
+.copyBtn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.copyBtn.copied {
+  opacity: 1;
+  color: #9ecbff;
+}
+
+/* ── Right TOC Sidebar ───────────────────────────── */
+.tocSidebar {
+  display: flex;
+  width: 286px;
+  min-width: 286px;
+  padding: 48px 0 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.tocInner {
+  display: flex;
+  width: 100%;
+  padding-right: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1 0 0;
+}
+
+/* ── TOC Header ──────────────────────────────────── */
+.tocHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: stretch;
+  margin-bottom: 12px;
+}
+
+.tocHeaderLabel {
+  color: #8b9dc1;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  margin: 0;
+}
+
+/* ── TOC Nav List ────────────────────────────────── */
+.tocNavWrapper {
+  display: flex;
+  padding-left: 1px;
+  flex-direction: column;
+  align-self: stretch;
+  overflow: hidden;
+  position: relative;
+}
+
+.tocNavList {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  border-left: 0.8px solid rgba(233, 238, 249, 0.1);
+  padding: 12px 0;
+}
+
+.tocLink {
+  display: flex;
+  padding: 6px 0 6px 12px;
+  flex-direction: column;
+  align-self: stretch;
+  color: #8b9dc1;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.tocLink:hover {
+  color: #d1dffa;
+}
+
+.tocLink.active {
+  color: #9ecbff;
+  border-left: 2px solid #9ecbff;
+  margin-left: -1px;
+}
+
+.tocLinkIndented {
+  padding-left: 24px;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 1280px) {
+  .docsLayout {
+    padding-left: 0;
+  }
+
+  .docsPage {
+    padding-right: 0;
+  }
+
+  .tocSidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .article {
+    padding: 24px 16px 0;
+  }
+
+  .pageTitle {
+    font-size: 22px;
+    line-height: 34px;
+  }
+
+  .sectionH2 {
+    font-size: 20px;
+  }
+
+  .sectionH3 {
+    font-size: 17px;
+  }
+}

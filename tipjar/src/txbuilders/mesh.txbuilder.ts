@@ -29,7 +29,7 @@ export class MeshTxBuilder extends MeshAdapter {
                         }, Number(amount)))
                     }
                 ])
-                 .txOutInlineDatumValue(mConStr0([1]))
+               
         } else {
             unsignedTx
                 .txOut(this.spendAddress, [
@@ -38,7 +38,6 @@ export class MeshTxBuilder extends MeshAdapter {
                         quantity: amount
                     }
                 ])
-                .txOutInlineDatumValue(mConStr0([1]))
         }
 
         unsignedTx

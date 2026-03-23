@@ -29,7 +29,7 @@ describe("This is testcase Tip and Cliam with Tipjar validator", function() {
     jest.setTimeout(6_000_000)
 
     test("Tip", async function() {
-        return;
+        // return;
         const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
             meshWallet: meshWallet,
             owner: owner,
