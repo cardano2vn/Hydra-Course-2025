@@ -16,69 +16,39 @@
 
 </div>
 
-# Giới Thiệu
+## 📌 Giới thiệu
 
-## **Hydra là gì?**
+Phần này tập trung vào việc tổng hợp và củng cố các kiến thức nền tảng quan trọng trước khi bước vào xây dựng một DApp thực tế trên Hydra.
 
-**Hydra** là **giải pháp mở rộng Layer-2 chính thức và tiên phong của Cardano**, được xây dựng để **loại bỏ hoàn toàn các giới hạn về tốc độ và chi phí** của blockchain Layer-1 — **mà không đánh đổi bảo mật hay tính phi tập trung**.
+Cụ thể, nội dung bao gồm:
 
-> _“Hydra không phải là sidechain. Đây là **isomorphic state channel** — mở rộng Cardano một cách tự nhiên, an toàn và hiệu quả.”_  
-> — **IOG Research (2019–2025)**
-
----
-
-## **Tại sao cần Hydra?**
-
-| Vấn đề Layer-1 (Cardano)   | Hậu quả                         | Hydra giải quyết như thế nào?                |
-| -------------------------- | ------------------------------- | -------------------------------------------- |
-| **~250 TPS**               | Không đủ cho ứng dụng đại chúng | **>10.000 TPS/Head** (đã thử nghiệm mainnet) |
-| **Block time ~20 giây**    | Không real-time                 | **<100ms xác nhận**                          |
-| **Phí tăng khi tắc nghẽn** | UX kém                          | **~0.001–0.01 ADA/Head mở/đóng**             |
-| **Không scale tuyến tính** | Bottleneck                      | **Hàng nghìn Head song song**                |
-
-> **Hydra = Layer-2 “tự nhiên nhất” cho Cardano** — không cần hard fork, không cần bridge, không cần ZK-proof hay fraud-proof.
+- 🔁 Ôn tập và hệ thống hóa kiến thức cốt lõi
+  Làm rõ toàn bộ quy trình xây dựng và vận hành một Hydra Head, từ khởi tạo, commit tài sản, mở head cho đến khi đóng và fan-out về Layer 1.
+- 🌐 Cấu hình và expose Hydra Node trên VPS
+  Hướng dẫn cách thiết lập môi trường, mở port và export địa chỉ IP để cho phép các ứng dụng bên ngoài (frontend/DApp) có thể kết nối trực tiếp tới Hydra Node thông qua API.
+- ⚖️ So sánh với các giải pháp Layer 2 khác
+  Phân tích sự khác biệt giữa Hydra và các giải pháp tiêu biểu như Lightning Network (Bitcoin), nhằm làm rõ:
+  - Sự khác biệt trong kiến trúc (multi-party vs payment channel).
+  - Cách quản lý trạng thái (full ledger vs balance-based).
+  - Khả năng mở rộng và lập trình (smart contract vs micropayment)
 
 ---
 
-## **Mục tiêu của tài liệu này**
+## 🎯 Mục tiêu
 
-Sau khi hoàn thành, bạn sẽ:
+Sau khi hoàn thành phần này, bạn sẽ có được một nền tảng kiến thức vững chắc để bước vào giai đoạn xây dựng DApp thực tế trên Hydra, bao gồm:
 
-| Mục tiêu                            | Chi tiết                                            |
-| ----------------------------------- | --------------------------------------------------- |
-| **1. Hiểu rõ môi trường cần thiết** | Cardano Node 10.5.1+, Ubuntu 22.04, socket, mạng    |
-| **2. Cài đặt Hydra Node 1.0.0**     | Tải binary, thêm PATH, kiểm tra version             |
-| **3. Tạo khóa & cấu hình**          | Cardano keys (fuel + funds), Hydra keys (off-chain) |
-| **4. Chạy 2 node (Alice + Bob)**    | Kết nối P2P localhost, API WebSocket                |
-| **5. Kiểm tra kết nối thành công**  | `networkConnected: true`, `peersInfo`               |
-| **6. Sẵn sàng mở Head**             | Chuẩn bị cho `init`, `commit`, `newtx`, `close`     |
-
----
-
-## **Đối tượng hướng đến**
-
-| Người đọc             | Phù hợp?                         |
-| --------------------- | -------------------------------- |
-| **Developer Cardano** | Rất phù hợp                      |
-| **dApp Builder**      | Rất phù hợp                      |
-| **Node Operator**     | Rất phù hợp                      |
-| **Người mới bắt đầu** | Phù hợp (có hướng dẫn từng bước) |
-
-> **Không cần biên dịch từ source** — dùng **binary chính thức**  
-> **Không cần VPS mạnh** — chạy được trên máy local (test)
-
----
-
-## **Yêu cầu hệ thống (tối thiểu)**
-
-| Yêu cầu          | Khuyến nghị                     |
-| ---------------- | ------------------------------- |
-| **OS**           | Ubuntu 22.04 LTS                |
-| **CPU**          | 2 cores                         |
-| **RAM**          | 4 GB                            |
-| **Disk**         | 50 GB (cho Cardano Node)        |
-| **Mạng**         | Public IP hoặc localhost (test) |
-| **Cardano Node** | v10.5.1+, đã **đồng bộ 100%**   |
+- 🔍 Hiểu rõ cách một Hydra Head hoạt động trong thực tế
+  Bạn sẽ nắm được toàn bộ vòng đời của một Hydra Head, từ giai đoạn khởi tạo (init), commit tài sản từ Layer 1, mở head để thực hiện giao dịch off-chain, cho đến khi đóng head và fan-out trạng thái cuối cùng về lại blockchain. Đồng thời, bạn cũng hiểu được cách các bên tham gia tương tác và đồng thuận với nhau trong môi trường Hydra.
+- ⚙️ Biết cách triển khai và expose Hydra Node trên môi trường VPS
+  Bạn sẽ có khả năng tự thiết lập một hệ thống Hydra Node chạy trên VPS, cấu hình các port cần thiết, mở firewall và export địa chỉ IP để cho phép truy cập từ bên ngoài. Điều này giúp bạn đưa Hydra từ môi trường local lên môi trường thực tế, sẵn sàng cho việc tích hợp với các ứng dụng khác.
+- 🔗 Nắm được cách tích hợp Hydra với ứng dụng bên ngoài (DApp/Frontend)
+  Bạn sẽ hiểu cách các ứng dụng client (frontend hoặc backend) giao tiếp với Hydra thông qua API, từ đó có thể xây dựng các DApp có khả năng gửi giao dịch, truy vấn trạng thái và tương tác trực tiếp với Hydra Head một cách mượt mà, thay vì thao tác thủ công qua terminal.
+- ⚖️ Phân biệt rõ Hydra với các giải pháp Layer 2 khác
+  Không chỉ dừng lại ở việc sử dụng, bạn còn hiểu sâu về sự khác biệt giữa Hydra và các giải pháp như Lightning Network, thông qua các khía cạnh quan trọng:
+  Kiến trúc: Hydra sử dụng mô hình multi-party state channel với shared state, trong khi Lightning sử dụng payment channel giữa hai bên.
+- Use case: Hydra phù hợp cho các DApp phức tạp (DeFi, NFT, logic on-chain), còn Lightning tối ưu cho thanh toán nhanh (micropayment).
+- Khả năng mở rộng: Hydra cho phép xử lý nhiều giao dịch với logic phức tạp trong một head, trong khi Lightning mở rộng thông qua mạng lưới routing toàn cầu.
 
 ---
 
@@ -90,7 +60,7 @@ Chạy lệnh kiểm tra tip của node:
 
 ```bash
 cardano-cli query tip --testnet-magic 2
-````
+```
 
 Kết quả mong đợi (đã đồng bộ):
 
@@ -735,3 +705,21 @@ Kết quả
 ```
 
 Khi `"networkConnected": true` và `"peersInfo": { "127.0.0.1:5002": true }` chứng tỏ thành công
+
+<div align="center">
+
+## 📚 **Tài liệu tham khảo**
+
+**Tóm tắt các bài học quan trọng và chuẩn bị nền tảng vững chắc để bước vào giai đoạn phát triển Hydra DApp một cách an toàn, ổn định và hiệu quả.**
+
+<p>
+
+<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/introduction-to-hydra-exploring-the-future-of-cardanos-layer-2-scaling-and-practical-use-cases"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
+<a href="YOUR_SLIDES_LINK"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
+<a href="YOUR_GITHUB_LINK"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
+<a href="YOUR_ARTICLE_LINK"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
+<a href="YOUR_YOUTUBE_LINK"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
+
+</p>
+
+</div>
