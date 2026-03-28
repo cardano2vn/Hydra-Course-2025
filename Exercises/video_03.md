@@ -1,4 +1,4 @@
-# 📝 Bài tập – Thiết lập môi trường Hydra
+# 📝 Bài tập
 
 ---
 

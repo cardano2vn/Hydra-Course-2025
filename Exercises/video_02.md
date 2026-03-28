@@ -1,6 +1,6 @@
-# 📝 Bài tập – Kiến trúc Hydra (Nâng cao)
+# 📝 Bài tập
 
---
+---
 
 ## ✅ Bài 1: Phân tích vòng đời Hydra Head
 

@@ -1,4 +1,4 @@
-# 📝 Bài tập – Tổng quan về Hydra (Layer-2 Cardano)
+# 📝 Bài tập
 
 ---
 

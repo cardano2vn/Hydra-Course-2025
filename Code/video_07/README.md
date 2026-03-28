@@ -23,149 +23,90 @@ Phân tích nguyên nhân lỗi theo từng tầng, từ L1 Cardano đến L2 Hy
 Áp dụng quy trình xử lý chuẩn dựa trên log và công cụ debug realtime.
 Đảm bảo Hydra Head mở/đóng an toàn và giao dịch L2 hoạt động ổn định.
 
-
 ---
 
 ## 🎯 Mục tiêu
 
----
+Sau khi nghiên cứu và thực hành theo tài liệu này, người học sẽ đạt được:
 
-## 🏗️ Vòng đời thực sự của Hydra Head
-
-Hydra Head là một mô hình off-chain scaling trên Cardano, nơi các giao dịch được thực hiện ngoài blockchain nhưng vẫn đảm bảo tính nhất quán và an toàn. Mỗi Hydra Head vận hành theo một chuỗi trạng thái tuần tự, từ khi khởi tạo cho đến khi hoàn tất settlement trên blockchain. Hiểu rõ vòng đời này là chìa khóa để vận hành Hydra Node hiệu quả và xử lý các sự cố nhanh chóng.
-
-Dưới đây là mô tả chi tiết từng trạng thái trong vòng đời Hydra Head:
-
-1. Idle – Trạng thái chờ
-
-- Đây là trạng thái mặc định của Node trước khi Hydra Head được tạo.
-- Node không thực hiện bất kỳ giao dịch nào và chỉ lắng nghe tín hiệu từ các participant để mở Head mới.
-- Trong trạng thái Idle, Node đảm bảo rằng tất cả các tài nguyên (UTxOs, bộ nhớ, kết nối mạng) đều sẵn sàng cho việc khởi tạo Head.
-- Lưu ý vận hành: Một Node bị treo lâu ở Idle thường do vấn đề network hoặc participant không gửi tín hiệu khởi tạo, cần kiểm tra kết nối và logs.
-
-2. Init (Initialization) – Khởi tạo Hydra Head
-
-- Khi participant quyết định mở Head, Node chuyển sang trạng thái Init.
-- Trong giai đoạn này, Node sẽ xác nhận danh sách participant, commit tài sản (UTxOs) từ Layer 1 và thiết lập các quy tắc giao dịch off-chain.
-- Các bước chính trong Init:
-  - Xác định danh sách participant: tất cả Operators và Delegators phải được liệt kê chính xác.
-  - Cấu hình UTxOs ban đầu: các UTxO của participant được commit tạm thời để đảm bảo tài sản có thể dùng cho giao dịch off-chain.
-  - Thiết lập rules và timeout: bao gồm số lượng transaction tối đa, thời gian chờ, và các quy tắc xác nhận giao dịch.
-- Lưu ý vận hành: Nếu có participant thiếu commit UTxO hoặc cấu hình không hợp lệ, Node sẽ không thể chuyển sang trạng thái tiếp theo, dẫn đến lỗi Init. Cần kiểm tra logs để xác định participant nào gây lỗi và xử lý kịp thời.
-- Điểm quan trọng: Nếu participant thiếu commit UTxO hoặc cấu hình không hợp lệ, Head sẽ không thể tiến sang trạng thái tiếp theo.
-
-Ví dụ thực tế: Một Node mới tham gia nhưng chưa đồng bộ blockchain có thể gây lỗi Init vì Node không nhận được UTxO hợp lệ từ participant khác.
-
-3. Commit – Cam kết tài sản
-
-- Trạng thái này yêu cầu mọi participant commit UTxOs của họ vào Hydra Head.
-- Commit là bước quan trọng để đảm bảo rằng mọi participant đều đồng ý về tài sản sẽ được sử dụng trong giao dịch off-chain.
-- Nếu có participant nào không commit hoặc commit không hợp lệ, Head không thể mở và sẽ cần xử lý lỗi hoặc hủy Head.
-- Kiểm soát lỗi phổ biến: UTxO không tồn tại hoặc bị khóa. Participant offline hoặc mất kết nối. Khác phiên bản Node (version mismatch) gây lỗi signature.
-- Ý nghĩa vận hành: Commit là cơ chế atomicity: mọi participant phải commit thành công, nếu không Head không thể mở, tránh trường hợp một số participant bị mất lợi ích hoặc dữ liệu off-chain bị thiếu.
-
-4. Open – Mở Hydra Head và thực hiện giao dịch off-chain
-
-- Khi tất cả participant đã commit, Head chuyển sang trạng thái Open.
-- Trong Open:
-  - Các giao dịch off-chain được tạo, ký và broadcast giữa các participant mà không cần ghi lên blockchain.
-  - Mỗi participant duy trì một state đồng bộ, bao gồm số dư và lịch sử giao dịch.
-  - Node liên tục kiểm tra signature, state hash, và network latency để đảm bảo tính nhất quán.
-- Lưu ý quan trọng:
-  - Nếu participant offline hoặc mất đồng bộ, Head có thể bị treo.
-  - Giao dịch sai cú pháp hoặc vượt quá số dư sẽ bị từ chối.
-- Cách xử lý lỗi Open: Restart Node, resync state từ các participant khác hoặc fallback sang trạng thái Close để commit lên blockchain.
-
-5. Close – Đóng Head
-
-- Khi Head hoàn thành mục tiêu giao dịch hoặc hết thời gian, Node chuyển sang trạng thái Close.
-- Trong Close:
-  - Tất cả các giao dịch off-chain được tổng hợp lại.
-  - Giao dịch chưa được commit sẽ bị hủy để đảm bảo tính nhất quán.
-  - Participant chuẩn bị dữ liệu để đẩy lên blockchain.
-- Các vấn đề thường gặp:
-  - Node mất kết nối mạng khi Close, dẫn đến Head bị treo.
-  - Signature không hợp lệ, không thể xác nhận giao dịch cuối cùng.
-
-Điểm lưu ý: Close là bước quyết định tính hợp lệ và an toàn của tất cả giao dịch off-chain. Nếu có lỗi trong quá trình này, có thể dẫn đến mất tài sản hoặc tranh chấp giữa các participant.
-
-6. Fanout – Đồng bộ lên blockchain
-
-- Đây là trạng thái cuối cùng trong vòng đời Hydra Head.
-- Fanout thực hiện settlement trên blockchain, bao gồm:
-  - Cập nhật số dư UTxOs của từng participant.
-  - Giải phóng các UTxO tạm sử dụng trong Head.
-  - Xóa state tạm và logs không cần thiết, chuẩn bị Node trở lại Idle.
-- Lưu ý vận hành:
-  - Nếu Fanout thất bại (ví dụ do network hoặc lỗi on-chain), participant cần retry để tránh mất tài sản.
-  - Fanout đảm bảo tính finality cho tất cả giao dịch off-chain.
-
-### 🔑 Tổng kết và điểm quan trọng
-
-- Chuỗi trạng thái: Idle → Init → Commit → Open → Close → Fanout là cơ chế chuẩn giúp Hydra Head vận hành an toàn.
-- Theo dõi logs và trạng thái Node liên tục để nhận diện lỗi sớm.
-- Hiểu cơ chế vòng đời giúp xử lý sự cố chính xác: biết ngay lỗi xảy ra ở giai đoạn nào, nguyên nhân và cách khắc phục.
-- An toàn và bảo mật: Từng trạng thái đều có cơ chế bảo vệ tài sản participant và đảm bảo tính nhất quán của hệ thống.
+- **Khả năng định danh lỗi:** Phân biệt chính xác lỗi do hạ tầng (Layer 1) hay lỗi do giao thức (Layer 2).
+- **Kỹ năng phân tích đa tầng:** Thấu hiểu mối quan hệ cộng sinh giữa Cardano Node và Hydra Node.
+- **Quy trình xử lý chuẩn (SOP):** Sử dụng thành thạo các công cụ Debug (Log, WebSocket, CLI) để khôi phục hệ thống.
+- **Vận hành an toàn:** Đảm bảo toàn bộ vòng đời của Hydra Head diễn ra thông suốt, bảo vệ tính toàn vẹn của tài sản.
 
 ---
 
-## 👥 Vai trò của Operators và Delegators
+## 🏗️ 2. Nhận Diện Lỗi Tầng Layer 1 (Cardano Infrastructure)
 
-Trong hệ sinh thái Hydra, mọi giao dịch off-chain đều được quản lý bởi các participant, bao gồm hai loại chính: Operators và Delegators. Hiểu rõ vai trò, quyền hạn và trách nhiệm của từng loại là điều cốt lõi để vận hành Hydra Node hiệu quả, đảm bảo an toàn và giảm thiểu rủi ro bảo mật.
+Layer 1 là nền tảng. Nếu Cardano Node gặp sự cố, Hydra Node sẽ bị "mất liên lạc" với sổ cái chính.
 
+### 2.1. Lỗi Biến Môi Trường Socket (`node.socket`)
 
+- **Triệu chứng:** Khi chạy lệnh `cardano-cli query tip`, hệ thống báo lỗi: `ConnectException: "node.socket": directional link failure`.
+- **Nguyên nhân:** CLI không tìm thấy file giao tiếp giữa các tiến trình (IPC) do biến `CARDANO_NODE_SOCKET_PATH` chưa được thiết lập.
+- **Giải pháp chi tiết:**
+  1. Kiểm tra biến môi trường: `echo $CARDANO_NODE_SOCKET_PATH`.
+  2. Nếu trống, hãy tìm vị trí file socket thực tế và cấu hình vào file cá nhân:
 
-1. Operators – Người vận hành Node
+     ```bash
+     echo 'export CARDANO_NODE_SOCKET_PATH=/đường/dẫn/đến/node.socket' >> ~/.bashrc
+     source ~/.bashrc
+     ```
 
-- Vai trò chính: Operators chịu trách nhiệm vận hành Hydra Node, thực hiện các giao dịch off-chain, đảm bảo trạng thái của Hydra Head được đồng bộ và xử lý đúng quy trình.
-- Trách nhiệm chi tiết:
-  - Khởi tạo và quản lý Head: mở Hydra Head mới, commit UTxO, và giám sát toàn bộ trạng thái.
-  - Thực hiện giao dịch off-chain: ký và broadcast các giao dịch giữa các participant.
-  - Giám sát trạng thái Node: kiểm tra logs, trạng thái đồng bộ, network latency, và đảm bảo Node hoạt động ổn định.
-  - Xử lý lỗi: khi Head treo hoặc gặp lỗi, Operators phải thực hiện các bước recovery hoặc fallback.
-  - Fanout và settlement: đảm bảo rằng tất cả các giao dịch off-chain được push lên blockchain khi Head đóng.
-- Quyền hạn: Operators có quyền trực tiếp thao tác trên Node và điều phối các giao dịch off-chain, do đó họ là những người nắm quyền kiểm soát cao nhất trong Hydra Head.
-- Rủi ro: Nếu Operators không vận hành đúng quy trình, có thể dẫn đến: Giao dịch bị treo hoặc mất đi trong Head. State không đồng bộ giữa participant. Rủi ro an ninh nếu Node bị tấn công hoặc bị chiếm quyền kiểm soát.
+### 2.2. Lỗi Đồng Bộ Hóa (Synchronization)
 
-2. Delegators – Người tham gia Head
+- **Triệu chứng:** Hydra Node báo lỗi không tìm thấy Point (Block) khởi tạo hoặc giao dịch bị treo.
+- **Nguyên nhân:** Cardano Node chưa đạt trạng thái `syncProgress: 100%`.
+- **Kiểm tra:** ```bash
+  cardano-cli query tip --testnet-magic 2
+  ```
+  *Lưu ý: Luôn đợi Node L1 đồng bộ hoàn toàn trước khi khởi chạy Hydra Node.*
+  ```
 
-- Vai trò chính:
-  - Delegators không trực tiếp vận hành Node, nhưng tham gia vào Head để cung cấp tài sản (UTxOs) và ký xác nhận giao dịch.
-- Trách nhiệm chi tiết:
-  - Commit tài sản (UTxOs): cung cấp tài sản để sử dụng trong giao dịch off-chain.
-  - Xác nhận giao dịch: ký các giao dịch off-chain theo quy định của Head.
-  - Giám sát kết quả: theo dõi trạng thái Head thông qua Node mà họ ủy quyền hoặc thông qua dashboard.
-  - Tuân thủ rules của Head: đảm bảo không thực hiện các giao dịch trái phép hoặc vượt quá số dư đã commit.
-- Quyền hạn: Delegators có quyền đồng thuận với Operators thông qua việc ký giao dịch. Họ không điều khiển Node trực tiếp nhưng có vai trò quyết định trong việc xác nhận giao dịch hợp lệ.
-- Rủi ro: Nếu Delegators offline hoặc không ký giao dịch đúng hạn, có thể: Head không thể mở hoặc tiến hành giao dịch. Giao dịch off-chain bị treo hoặc chậm trễ.
+### 2.3. Giải Pháp Tối Ưu: API Layer (Blockfrost)
 
-3. Tương tác giữa Operators và Delegators
+- **Tình huống:** Nếu tài nguyên máy chủ (RAM/CPU) không đủ để chạy Cardano Node, bạn có thể sử dụng giải pháp API.
+- **Cách thực hiện:** Sử dụng tham số `--node-api-variant-blockfrost` kết hợp với API Key để thay thế cho việc chạy Node cục bộ.
 
-- Mối quan hệ tin cậy:
-  - Operators vận hành Node và broadcast state, Delegators tham gia bằng việc ký xác nhận.
-  - Hydra sử dụng multi-signature và đồng thuận off-chain để đảm bảo rằng không một participant nào có thể thao túng giao dịch một mình.
-- Quy trình điển hình:
-  - Operators mở Head → chuyển trạng thái Init → tất cả participant commit UTxOs.
-  - Head mở (Open) → Operators broadcast giao dịch → Delegators ký và xác nhận.
-  - Head đóng (Close) → Fanout → các giao dịch được đồng bộ lên blockchain.
-- Lợi ích:
-  - Phân quyền rõ ràng, giảm rủi ro vận hành.
-  - Delegators tham gia mà không cần quản lý Node, tiết kiệm tài nguyên.
-  - Operators đảm bảo trạng thái Head ổn định, Delegators đảm bảo giao dịch hợp lệ.
-
-### 🔑 Điểm quan trọng
-
-- Operators là trái tim vận hành, chịu trách nhiệm chính về trạng thái và xử lý lỗi.
-- Delegators là nguồn lực và chữ ký, đảm bảo tính hợp lệ và đồng thuận trong giao dịch off-chain.
-- Sự phối hợp giữa Operators và Delegators tạo nên một Hydra Head ổn định, an toàn và đáng tin cậy.
+![alt text](assets/01.png)
 
 ---
 
-## 🔐 Mô hình tin cậy và rủi ro bảo mật
+## 🌀 3. Nhận Diện Lỗi Tầng Layer 2 (Hydra Protocol)
+
+### 3.1. Lỗi "No Seed Input" (Thiếu Fuel)
+
+- **Triệu chứng:** Gửi lệnh `init` nhưng nhận lại thông báo lỗi `PostChainTxError`.
+- **Bản chất:** Hydra Node cần một lượng ADA làm "nhiên liệu" (Fuel) để thực hiện các giao dịch điều khiển trên Layer 1 (Smart Contract).
+- **Xử lý:** Kiểm tra ví vận hành của Node. Mỗi Node (Alice, Bob...) cần ít nhất **100 ADA** trong ví nội bộ để sẵn sàng cho các thao tác `init`, `commit`, `close`.
+
+### 3.2. Lỗi Commit Tài Sản (Commit Validation)
+
+- **Triệu chứng:** Không thể thực hiện nạp tài sản hoặc file giao dịch commit sinh ra bị trống.
+- **Nguyên nhân:** Ở trạng thái `Initializing`, nốt chỉ tiếp nhận commit từ chính ví của nó thông qua cổng API tương ứng.
+- **Quy tắc vận hành:**
+  - **Alice:** Phải gửi lệnh commit qua Port 4001.
+  - **Bob:** Phải gửi lệnh commit qua Port 4002.
+  - _Cấm kỵ:_ Không commit chéo cổng hoặc commit nhiều lần trong một phiên làm việc.
+
+### 3.3. Lỗi Thời Gian Tranh Chấp (Contestation Period)
+
+- **Triệu chứng:** Gửi lệnh `fanout` ngay sau khi `close` nhưng bị hệ thống từ chối.
+- **Nguyên nhân:** Sau khi đóng Head, mạng lưới cần một khoảng thời gian chờ (mặc định 600 slot ~ 10 phút) để các bên kiểm tra tính trung thực của Snapshot cuối cùng.
+- **Cách xử lý:** 1. Theo dõi Log hệ thống. 2. Chỉ thực hiện lệnh `fanout` khi Log xuất hiện thông báo: `ReadyToFanout`.
 
 ---
 
-## ⚖️ Đánh giá an toàn của Hydra Head
+## 🛠️ 4. Quy Trình Debug Chuẩn Cho Người Học (SOP)
+
+Để trở thành một người vận hành chuyên nghiệp, hãy tuân thủ quy trình 4 bước sau khi gặp sự cố:
+
+1.  **Kiểm tra Trạng thái Tiến trình:** Sử dụng `tmux ls` hoặc `ps -ef | grep hydra` để đảm bảo các nốt đang thực sự chạy ngầm.
+2.  **Giám sát Log Real-time:** Kết nối vào WebSocket của Hydra để quan sát các thông điệp JSON. Đây là nguồn thông tin chính xác nhất về trạng thái hiện tại (`Idle`, `Initializing`, `Open`, `Closed`).
+3.  **Xác thực Tài sản (UTXO):** Luôn dùng lệnh `cardano-cli query utxo` để kiểm tra ví trước và sau mỗi bước quan trọng.
+4.  **Kiểm tra Tham số Cấu hình:** Rà soát kỹ các tham số khởi chạy như `--hydra-scripts-tx-id` và `--cardano-verification-key` để đảm bảo không có sự sai lệch giữa các nốt.
+
+---
 
 <div align="center">
 
