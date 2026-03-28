@@ -21,37 +21,24 @@ Theo dõi tiến độ tại [hydra.family](https://hydra.family)
 
 ## 📌 Giới thiệu
 
-Phần này tập trung vào việc tổng hợp và củng cố các kiến thức nền tảng quan trọng trước khi bước vào xây dựng một DApp thực tế trên Hydra.
+Trong phần này,  Cùng nhau tìm hiểu những nội dung cốt lõi về Hydra:
 
-Cụ thể, nội dung bao gồm:
+- Thứ nhất, hiểu tổng quan về Hydra – không chỉ là một công nghệ Layer-2, mà còn là một phần chiến lược quan trọng trong hệ sinh thái Cardano.
+- Thứ hai, nhận biết tại sao Layer-2 là tất yếu – chúng ta sẽ thấy rõ những giới hạn hiện tại của Layer-1 và lý do cần một giải pháp mở rộng mạnh mẽ như Hydra.
+- Thứ ba, khám phá cách Hydra hoạt động ở mức khái niệm – không đi sâu vào code hay thuật toán phức tạp, mà tập trung vào bản chất và nguyên lý vận hành.
+- Thứ tư, tìm hiểu 4 đặc điểm cốt lõi của Hydra: Tốc độ xử lý giao dịch cao. Chi phí tối ưu. Bảo mật vững chắc. Khả năng mở rộng gần như không giới hạn
+- Thứ năm, xem xét các ứng dụng thực tế – từ DeFi, NFT, gaming cho đến các dApp thời gian thực, và cách Hydra giúp những ứng dụng này trở nên khả thi hơn bao giờ hết.
 
-- 🔁 Ôn tập và hệ thống hóa kiến thức cốt lõi
-  Làm rõ toàn bộ quy trình xây dựng và vận hành một Hydra Head, từ khởi tạo, commit tài sản, mở head cho đến khi đóng và fan-out về Layer 1.
-- 🌐 Cấu hình và expose Hydra Node trên VPS
-  Hướng dẫn cách thiết lập môi trường, mở port và export địa chỉ IP để cho phép các ứng dụng bên ngoài (frontend/DApp) có thể kết nối trực tiếp tới Hydra Node thông qua API.
-- ⚖️ So sánh với các giải pháp Layer 2 khác
-  Phân tích sự khác biệt giữa Hydra và các giải pháp tiêu biểu như Lightning Network (Bitcoin), nhằm làm rõ:
-  - Sự khác biệt trong kiến trúc (multi-party vs payment channel).
-  - Cách quản lý trạng thái (full ledger vs balance-based).
-  - Khả năng mở rộng và lập trình (smart contract vs micropayment)
 
 ---
 
 ## 🎯 Mục tiêu
 
-Sau khi hoàn thành phần này, bạn sẽ có được một nền tảng kiến thức vững chắc để bước vào giai đoạn xây dựng DApp thực tế trên Hydra, bao gồm:
-
-- 🔍 Hiểu rõ cách một Hydra Head hoạt động trong thực tế
-  Bạn sẽ nắm được toàn bộ vòng đời của một Hydra Head, từ giai đoạn khởi tạo (init), commit tài sản từ Layer 1, mở head để thực hiện giao dịch off-chain, cho đến khi đóng head và fan-out trạng thái cuối cùng về lại blockchain. Đồng thời, bạn cũng hiểu được cách các bên tham gia tương tác và đồng thuận với nhau trong môi trường Hydra.
-- ⚙️ Biết cách triển khai và expose Hydra Node trên môi trường VPS
-  Bạn sẽ có khả năng tự thiết lập một hệ thống Hydra Node chạy trên VPS, cấu hình các port cần thiết, mở firewall và export địa chỉ IP để cho phép truy cập từ bên ngoài. Điều này giúp bạn đưa Hydra từ môi trường local lên môi trường thực tế, sẵn sàng cho việc tích hợp với các ứng dụng khác.
-- 🔗 Nắm được cách tích hợp Hydra với ứng dụng bên ngoài (DApp/Frontend)
-  Bạn sẽ hiểu cách các ứng dụng client (frontend hoặc backend) giao tiếp với Hydra thông qua API, từ đó có thể xây dựng các DApp có khả năng gửi giao dịch, truy vấn trạng thái và tương tác trực tiếp với Hydra Head một cách mượt mà, thay vì thao tác thủ công qua terminal.
-- ⚖️ Phân biệt rõ Hydra với các giải pháp Layer 2 khác
-  Không chỉ dừng lại ở việc sử dụng, bạn còn hiểu sâu về sự khác biệt giữa Hydra và các giải pháp như Lightning Network, thông qua các khía cạnh quan trọng:
-  Kiến trúc: Hydra sử dụng mô hình multi-party state channel với shared state, trong khi Lightning sử dụng payment channel giữa hai bên.
-- Use case: Hydra phù hợp cho các DApp phức tạp (DeFi, NFT, logic on-chain), còn Lightning tối ưu cho thanh toán nhanh (micropayment).
-- Khả năng mở rộng: Hydra cho phép xử lý nhiều giao dịch với logic phức tạp trong một head, trong khi Lightning mở rộng thông qua mạng lưới routing toàn cầu.
+- Hiểu rõ Hydra là gì và vai trò của nó trong hệ sinh thái Cardano.
+- Nắm được lý do cần Layer-2 và các vấn đề của Layer-1.
+- Hiểu cách Hydra hoạt động ở mức khái niệm.
+- Nhận diện được các lợi ích và đặc điểm nổi bật của Hydra.
+- Có nền tảng vững chắc để tiếp cận phần kỹ thuật ở các bài tiếp theo.
 
 ---
 
