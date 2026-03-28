@@ -18,51 +18,59 @@
 
 ## 📌 Giới thiệu
 
-Phần này tập trung vào việc tổng hợp và củng cố các kiến thức nền tảng quan trọng trước khi bước vào xây dựng một DApp thực tế trên Hydra.
+Trong bài học này, chúng ta sẽ từng bước tiếp cận quy trình thiết lập và chạy thử một hệ thống Hydra Node trong môi trường thực tế. Mục tiêu không chỉ dừng lại ở việc cài đặt, mà còn giúp bạn hiểu rõ cách các thành phần hoạt động và liên kết với nhau trong kiến trúc tổng thể của Hydra trên Cardano.
 
-Cụ thể, nội dung bao gồm:
+Bạn sẽ bắt đầu từ việc chuẩn bị môi trường, cài đặt các công cụ cần thiết, thiết lập các biến môi trường và cấu hình hệ thống. Sau đó, chúng ta sẽ đi sâu vào việc tạo khóa, cấu hình tham số và cuối cùng là khởi chạy một demo hoàn chỉnh để quan sát cách Hydra vận hành trong thực tế.
 
-- 🔁 Ôn tập và hệ thống hóa kiến thức cốt lõi
-  Làm rõ toàn bộ quy trình xây dựng và vận hành một Hydra Head, từ khởi tạo, commit tài sản, mở head cho đến khi đóng và fan-out về Layer 1.
-- 🌐 Cấu hình và expose Hydra Node trên VPS
-  Hướng dẫn cách thiết lập môi trường, mở port và export địa chỉ IP để cho phép các ứng dụng bên ngoài (frontend/DApp) có thể kết nối trực tiếp tới Hydra Node thông qua API.
-- ⚖️ So sánh với các giải pháp Layer 2 khác
-  Phân tích sự khác biệt giữa Hydra và các giải pháp tiêu biểu như Lightning Network (Bitcoin), nhằm làm rõ:
-  - Sự khác biệt trong kiến trúc (multi-party vs payment channel).
-  - Cách quản lý trạng thái (full ledger vs balance-based).
-  - Khả năng mở rộng và lập trình (smart contract vs micropayment)
+Thông qua bài học này, bạn sẽ có cái nhìn rõ ràng hơn về cách xây dựng và vận hành một hệ thống off-chain sử dụng Hydra, từ đó làm nền tảng cho việc phát triển các ứng dụng phi tập trung (DApp) có hiệu năng cao.
+
+📚 Cụ thể, nội dung bao gồm:
+
+- Giới thiệu tổng quan về bài học và vai trò của Hydra.
+- Chuẩn bị môi trường để chạy Hydra Node.
+- Cài đặt các công cụ cần thiết và thiết lập biến môi trường.
+  = Tạo khóa và cấu hình các tham số quan trọng.
+- Khởi chạy demo và quan sát hoạt động của hệ thống.
 
 ---
 
 ## 🎯 Mục tiêu
 
-Sau khi hoàn thành phần này, bạn sẽ có được một nền tảng kiến thức vững chắc để bước vào giai đoạn xây dựng DApp thực tế trên Hydra, bao gồm:
+Sau khi hoàn thành bài học này, bạn sẽ đạt được các mục tiêu sau:
 
-- 🔍 Hiểu rõ cách một Hydra Head hoạt động trong thực tế
-  Bạn sẽ nắm được toàn bộ vòng đời của một Hydra Head, từ giai đoạn khởi tạo (init), commit tài sản từ Layer 1, mở head để thực hiện giao dịch off-chain, cho đến khi đóng head và fan-out trạng thái cuối cùng về lại blockchain. Đồng thời, bạn cũng hiểu được cách các bên tham gia tương tác và đồng thuận với nhau trong môi trường Hydra.
-- ⚙️ Biết cách triển khai và expose Hydra Node trên môi trường VPS
-  Bạn sẽ có khả năng tự thiết lập một hệ thống Hydra Node chạy trên VPS, cấu hình các port cần thiết, mở firewall và export địa chỉ IP để cho phép truy cập từ bên ngoài. Điều này giúp bạn đưa Hydra từ môi trường local lên môi trường thực tế, sẵn sàng cho việc tích hợp với các ứng dụng khác.
-- 🔗 Nắm được cách tích hợp Hydra với ứng dụng bên ngoài (DApp/Frontend)
-  Bạn sẽ hiểu cách các ứng dụng client (frontend hoặc backend) giao tiếp với Hydra thông qua API, từ đó có thể xây dựng các DApp có khả năng gửi giao dịch, truy vấn trạng thái và tương tác trực tiếp với Hydra Head một cách mượt mà, thay vì thao tác thủ công qua terminal.
-- ⚖️ Phân biệt rõ Hydra với các giải pháp Layer 2 khác
-  Không chỉ dừng lại ở việc sử dụng, bạn còn hiểu sâu về sự khác biệt giữa Hydra và các giải pháp như Lightning Network, thông qua các khía cạnh quan trọng:
-  Kiến trúc: Hydra sử dụng mô hình multi-party state channel với shared state, trong khi Lightning sử dụng payment channel giữa hai bên.
-- Use case: Hydra phù hợp cho các DApp phức tạp (DeFi, NFT, logic on-chain), còn Lightning tối ưu cho thanh toán nhanh (micropayment).
-- Khả năng mở rộng: Hydra cho phép xử lý nhiều giao dịch với logic phức tạp trong một head, trong khi Lightning mở rộng thông qua mạng lưới routing toàn cầu.
+- Hiểu được quy trình thiết lập và vận hành một Hydra Node từ đầu.
+- Biết cách chuẩn bị môi trường phù hợp cho việc phát triển và thử nghiệm Hydra.
+- Nắm được cách cài đặt và sử dụng các công cụ cần thiết trong hệ sinh thái Cardano.
+- Hiểu rõ vai trò của khóa (keys) và các tham số cấu hình trong hệ thống.
+- Có khả năng tự khởi chạy một demo Hydra và kiểm tra hoạt động của nó.
 
 ---
 
-# Chuẩn Bị Môi Trường
+## 📚 Cuẩn bị môi trường
+
+Trước khi khởi chạy Hydra Node, điều kiện tiên quyết là bạn phải đảm bảo rằng Cardano Node đang hoạt động ổn định và đã đồng bộ hoàn toàn với mạng blockchain. Hydra hoạt động như một layer mở rộng (Layer 2), vì vậy nó phụ thuộc trực tiếp vào Cardano Node để:
+
+- Lấy dữ liệu blockchain
+- Xác thực giao dịch
+- Đồng bộ trạng thái on-chain
+
+👉 Nếu Cardano Node chưa sync xong, Hydra sẽ không thể hoạt động chính xác.
 
 ## 1. Kiểm Tra Cardano Node Đang Chạy
 
-Chạy lệnh kiểm tra tip của node:
+Để kiểm tra trạng thái node, bạn sử dụng lệnh:
 
 ```bash
 cardano-cli query tip --testnet-magic 2
 ```
 
-Kết quả mong đợi (đã đồng bộ):
+Trong đó:
+
+- Lệnh này giúp bạn: Kiểm tra node có đang chạy hay không, Xác định mức độ đồng bộ với blockchain. Lấy thông tin mới nhất về block, slot và epoch.
+- `cardano-cli query tip` truy vấn trạng thái hiện tại của blockchain mà node đã đồng bộ.
+- `--testnet-magic 2` → chỉ định mạng Preview (testnet). Nếu bạn dùng mainnet, tham số sẽ khác (không dùng testnet-magic)
+
+Kết quả: Bạn sẽ nhận được một JSON chứa thông tin về block hiện tại, epoch, era, slot và tiến trình đồng bộ (syncProgress). Ví dụ:
 
 ```bash
 {
@@ -87,32 +95,43 @@ Kết quả mong đợi (đã đồng bộ):
 
 ## 2. Kiểm Tra `node.socket`
 
-Hydra truy cập Cardano node thông qua socket (IPC). Kiểm tra biến môi trường:
+Trong hệ thống Cardano, các thành phần như Cardano Node, cardano-cli và Hydra không giao tiếp với nhau qua HTTP API, mà sử dụng một cơ chế nội bộ gọi là IPC (Inter-Process Communication) thông qua file node.socket. Đây là một file đặc biệt mà Cardano Node tạo ra khi khởi động, và nó hoạt động như một cổng giao tiếp giữa node và các client khác (như cardano-cli hoặc hydra-node). 👉 Vì vậy, để Hydra hoạt động, bạn cần đảm bảo rằng biến môi trường CARDANO_NODE_SOCKET_PATH đã được cấu hình đúng.
+
+### 🔍 Kiểm tra biến môi trường
+
+1. Chạy lệnh sau để xem giá trị của biến môi trường:
 
 ```bash
 echo $CARDANO_NODE_SOCKET_PATH
 ```
 
-Ví dụ kết quả:
+2. Kết quả mong đợi sẽ thấy đường dẫn đầy đủ tới file node.socket, ví dụ:
 
 ```bash
 /home/ubuntu/cardano-node/relay/db/node.socket
 ```
 
-### Giải thích:
-
-- node.socket là kênh IPC giữa cardano-node và các client (ví dụ: hydra, cardano-cli).
-- Hydra cần quyền đọc/ghi tới socket này để truy vấn ledger.
-
 ### Nếu biến chưa được đặt
 
+Trong trường hợp biến môi trường CARDANO_NODE_SOCKET_PATH chưa tồn tại hoặc trả về rỗng, bạn cần thực hiện các bước sau để cấu hình đúng đường dẫn tới node.socket.
+
 1. Tìm file socket
+
+Tìm vị trí chính xác của file node.socket trong hệ thống. Tránh việc cấu hình sai đường dẫn dẫn đến lỗi kết nối giữa Hydra và Cardano Node.
 
 ```bash
 find / -name "node.socket" 2>/dev/null | head -5
 ```
 
+Lưu ý: Kết quả có thể trả về nhiều đường dẫn → hãy chọn đường dẫn đúng với Cardano Node đang chạy. Thường nằm trong thư mục: `/db` or `/relay/db/`hoặc thư mục bạn cấu hình khi chạy node
+
+```bash
+/home/ubuntu/cardano-node/db/node.socket
+```
+
 2. Export tạm thời
+
+Sau khi tìm được đường dẫn chính xác, bạn cần export biến môi trường:
 
 ```bash
 export CARDANO_NODE_SOCKET_PATH=./node.socket
