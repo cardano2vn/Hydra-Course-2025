@@ -55,14 +55,11 @@ tipjar/
 │  ├─ aiken.lock              # Lock file (auto-generated)
 │  └─ plutus.json             # Generated: compiled bytecode & schema
 ├─ tests/                     # Frontend (Next.js)
-│  ├─ mesh.test.ts                # Landing page
-│  ├─ layout.tsx              # Root layout
-│  ├─ globals.css             # Styling
-│  └─ ...
+│  └─ mesh.test.ts            # Test case
 ├─ txbuilder/                 # Helper scripts
 │  └─ mesh.txbuilder.ts       # Deploy helpers
-├─ adapters/                 # Helper scripts
-│  └─ mesh.adapter.ts       # Deploy helpers
+├─ adapters/                  # Helper scripts
+│  └─ mesh.adapter.ts         # Mesh helpers
 ├─ README.md                  # Hướng dẫn này
 ├─ package.json               # Node.js dependencies
 ├─ tsconfig.json              # TypeScript config
@@ -496,11 +493,11 @@ echo "Building tx from UTxO: $TX_HASH#$TX_IX (amount: $AMOUNT lovelace)"
 
 ## Kết Luận
 
-Bạn đã sẵn sàng phát triển smart contract Hydra!  
+Bạn đã sẵn sàng phát triển smart contract Hydra!
 
-Thay `todo` trong `placeholder.ak` bằng logic của bạn, chạy `aiken check && aiken build`, rồi tích hợp vào frontend.  
+Thay `todo` trong `placeholder.ak` bằng logic của bạn, chạy `aiken check && aiken build`, rồi tích hợp vào frontend.
 
-Cộng đồng Cardano Việt Nam luôn sẵn sàng hỗ trợ.  
+Cộng đồng Cardano Việt Nam luôn sẵn sàng hỗ trợ.
 
 **Chúc bạn sớm triển khai thành công dApp đầu tiên trên Hydra Head!**
 
