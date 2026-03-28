@@ -184,12 +184,23 @@ Hydra Head vận hành theo một cơ chế off-chain scaling nhưng vẫn phả
 
 Hydra Head dựa trên mối quan hệ tin cậy giữa Operators và Delegators, kết hợp với các cơ chế kỹ thuật để đảm bảo giao dịch off-chain an toàn:
 
+![](assets/03.png)
+
 1. Trust giữa Operators
-   ![](assets/03.png)
 
 - Operators chịu trách nhiệm vận hành Node và quản lý trạng thái Head.
 - Mọi giao dịch off-chain phải được đa số participant xác nhận (multi-signature) trước khi Head có thể commit hay close.
 - Cơ chế bảo vệ: nếu một Operator cố tình gian lận, các participant khác có thể phát hiện qua việc state hash không khớp và từ chối commit.
+
+2. Trust giữa Operators và Delegators
+
+- Delegators cung cấp tài sản và ký xác nhận giao dịch, nhưng không có quyền điều khiển Node.
+- Cơ chế bảo vệ: nếu Delegators không ký giao dịch hợp lệ, Head sẽ không thể tiến hành, tránh trường hợp giao dịch bị gian lận hoặc mất tài sản.
+
+3. Trust giữa Delegators
+
+- Delegators tin tưởng rằng Operators sẽ vận hành Node đúng quy trình và không gian lận.
+- Cơ chế bảo vệ: nếu Operators gian lận, Delegators có thể phát hiện qua việc giao dịch off-chain không được xác nhận hoặc state hash không khớp, và có thể từ chối ký giao dịch tiếp theo.
 
 ---
 
@@ -222,11 +233,11 @@ Khi một Hydra Head được quản lý bởi nhóm Operators và Delegators uy
 
 <p>
 
-<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/introduction-to-hydra-exploring-the-future-of-cardanos-layer-2-scaling-and-practical-use-cases"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
-<a href="YOUR_SLIDES_LINK"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
-<a href="YOUR_GITHUB_LINK"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
-<a href="YOUR_ARTICLE_LINK"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
-<a href="YOUR_YOUTUBE_LINK"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
+<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/deep-dive-into-hydra-architecture-how-heads-participants-and-channels-work-together"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
+<a href="https://docs.google.com/presentation/d/1Vti75V7p439qFaSd-iHbOjgzpzn0AbHR/edit?slide=id.p1#slide=id.p1"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
+<a href="https://github.com/cardano2vn/Hydra-Course-2025/tree/main/Code/video_02"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
+<a href="https://hydra-course-2025.vercel.app/document/chapter-01/video-02"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
+<a href="https://www.youtube.com/watch?v=sfVm6rp-dnU"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
 
 </p>
 
