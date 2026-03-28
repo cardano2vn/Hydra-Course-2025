@@ -135,7 +135,6 @@ Ví dụ thực tế: Một Node mới tham gia nhưng chưa đồng bộ blockc
 - Hiểu cơ chế vòng đời giúp xử lý sự cố chính xác: biết ngay lỗi xảy ra ở giai đoạn nào, nguyên nhân và cách khắc phục.
 - An toàn và bảo mật: Từng trạng thái đều có cơ chế bảo vệ tài sản participant và đảm bảo tính nhất quán của hệ thống.
 
----
 
 ---
 
