@@ -164,9 +164,9 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl unzip git
 ```
 
-# Cài Đặt Công Cụ
+## 5. Cài Đặt Công Cụ
 
-## Cài `websocat` - Công Cụ Test WebSocket
+### Cài đặt `websocat` - Công Cụ Test WebSocket
 
 websocat là một công cụ dòng lệnh mạnh mẽ, dùng để giao tiếp với WebSocket server giống như cách curl giao tiếp với HTTP server. Công cụ này bắt buộc phải có khi làm việc với Hydra Node, vì Hydra sử dụng WebSocket để:
 
@@ -175,7 +175,7 @@ websocat là một công cụ dòng lệnh mạnh mẽ, dùng để giao tiếp 
 - Theo dõi trạng thái Head
 - Gửi và nhận giao dịch off-chain
 
-### Cài đặt websocat (x86_64 Linux)
+#### Cài đặt websocat (x86_64 Linux)
 
 Websocat có bản build sẵn, không cần biên dịch.
 
@@ -189,7 +189,7 @@ sudo chmod a+x /usr/local/bin/websocat
 - Không cần giải nén — đây là một binary duy nhất
 - chmod a+x để bạn có thể chạy lệnh
 
-### Kiểm tra cài đặt
+#### Kiểm tra cài đặt
 
 ```bash
 websocat --version
@@ -274,9 +274,9 @@ hydra-node --version
 
 > Nếu lệnh không chạy: Kiểm tra echo $PATH. Kiểm tra file thực tế trong ~/bin
 
-# Giải Thích Các Tham Số trong Hydra Node
+## 6. Giải Thích Các Tham Số trong Hydra Node
 
-## 1. Các tham số cơ bản
+### 1. Các tham số cơ bản
 
 Nhóm tham số này điều khiển cách Hydra Node giao tiếp với các node khác trong mạng Hydra. Chúng xác định danh tính của node, địa chỉ lắng nghe P2P, và danh sách các peer sẽ kết nối khi khởi động. Nếu cấu hình sai, các node sẽ không thể nhìn thấy nhau và Head sẽ không thể khởi tạo.
 
@@ -288,7 +288,7 @@ Nhóm tham số này điều khiển cách Hydra Node giao tiếp với các nod
 | `--advertise HOST:PORT`    | Địa chỉ công khai để peer kết nối tới. Cần khi có NAT/firewall. Không đặt → dùng --listen. |
 | `-P`, `--peer HOST:PORT`   | Danh sách peer để node tự kết nối. Dùng nhiều lần, tối đa 7 peer.                          |
 
-## 2. API và Giao tiếp Client
+### 2. API và Giao tiếp Client
 
 Hydra cung cấp API HTTP và WebSocket nhằm cho phép ứng dụng client (web, backend, game engine…) giao tiếp với Hydra Head. Nhóm tham số này xác định địa chỉ API, cấu hình HTTPS/WSS và cổng cho Prometheus. Nếu sai cấu hình, client sẽ không thể gửi giao dịch hoặc truy cập trạng thái Head.
 
@@ -300,7 +300,7 @@ Hydra cung cấp API HTTP và WebSocket nhằm cho phép ứng dụng client (we
 | `--tls-key FILE`         | File private key cho TLS (phải có cùng lúc với cert).     |
 | `--monitoring-port PORT` | Cổng xuất Prometheus metrics. Không đặt → tắt monitoring. |
 
-## 3. KHÓA BẢO MẬT (OFF-CHAIN & ON-CHAIN)
+### 3. KHÓA BẢO MẬT (OFF-CHAIN & ON-CHAIN)
 
 Hydra sử dụng hai lớp khóa:
 
@@ -316,7 +316,7 @@ Nếu cấu hình thiếu hoặc sai khóa, node sẽ không thể tham gia Head
 | `--cardano-signing-key FILE`      | Khóa ký Cardano on-chain (fuel + ký tx Hydra). Mặc định: cardano.sk. |
 | `--cardano-verification-key FILE` | Khóa xác minh Cardano của participant khác. Dùng nhiều lần.          |
 
-## 4. LƯU TRỮ & PERSISTENCE
+### 4. LƯU TRỮ & PERSISTENCE
 
 Hydra lưu trữ trạng thái Head (UTxO, snapshot, event) trong persistence directory. Không được chỉnh sửa thủ công vì có thể làm hỏng lịch sử Head. Tùy chọn xoay file persistence giúp giảm kích thước file và tối ưu hiệu năng lâu dài.
 
@@ -325,11 +325,11 @@ Hydra lưu trữ trạng thái Head (UTxO, snapshot, event) trong persistence di
 | `--persistence-dir DIR`              | Thư mục lưu trạng thái Head (UTxO, snapshot, lịch sử). Không chỉnh sửa thủ công. |
 | `--persistence-rotate-after NATURAL` | Số event trước khi xoay file persistence. Mặc định: không xoay.                  |
 
-## 5. Kết nối với Cardano Layer 1
+### 5. Kết nối với Cardano Layer 1
 
 Hydra vẫn phụ thuộc Cardano L1 để mở Head, đóng Head và xuất UTxO ra chain. Bạn có thể kết nối bằng cách dùng cardano-node hoặc Blockfrost. Sai cấu hình sẽ khiến giao dịch không thể submit.
 
-### 1. Sử dụng Cardano Node (recommended)
+#### 1. Sử dụng Cardano Node (recommended)
 
 | Tham số                   | Giải thích                                                         |
 | ------------------------- | ------------------------------------------------------------------ |
@@ -337,13 +337,13 @@ Hydra vẫn phụ thuộc Cardano L1 để mở Head, đóng Head và xuất UTx
 | `--testnet-magic NATURAL` | Chạy trên testnet. Ví dụ: --testnet-magic 2 → Preview.             |
 | `--node-socket FILE`      | Đường dẫn tới node.socket của cardano-node. Mặc định: node.socket. |
 
-### 2. Sử dụng Blockfrost
+#### 2. Sử dụng Blockfrost
 
 | Tham số             | Giải thích                                              |
 | ------------------- | ------------------------------------------------------- |
 | `--blockfrost FILE` | File chứa Blockfrost API key. Mặc định: blockfrost.txt. |
 
-## 6. Hydra Scripts (Plutus Scripts)
+#### 3. Hydra Scripts (Plutus Scripts)
 
 Hydra yêu cầu bộ scripts Plutus đã publish lên chain.
 Tất cả node phải dùng cùng scripts thông qua TXID hoặc cùng network.
@@ -354,7 +354,7 @@ Sai TXID hoặc khác network sẽ khiến Head không thể mở.
 | `--hydra-scripts-tx-id TXID` | TxID chứa reference scripts Hydra (nằm trong 10 output đầu).      |
 | `--network NETWORK`          | Sử dụng scripts đã publish sẵn cho (mainnet / preprod / preview). |
 
-## 7. Tham số trong giao thức Head
+#### 4. Tham số trong giao thức Head
 
 Những tham số này quyết định logic hoạt động của Head: thời gian tranh chấp, thời gian deposit và điểm xuất phát của chain.
 Tất cả các node phải sử dụng cùng cấu hình.
@@ -365,7 +365,7 @@ Tất cả các node phải sử dụng cùng cấu hình.
 | `--deposit-period SECONDS`      | Thời gian tối thiểu trước deadline để gửi deposit. Mặc định: 3600 giây. |
 | `--start-chain-from SLOT.HASH`  | Điểm bắt đầu theo dõi chain. Dùng khi phục hồi từ snapshot.             |
 
-## 8. Chế độ offline (Mô Phỏng L1)
+#### 5. Chế độ offline (Mô Phỏng L1)
 
 Hydra có chế độ chạy offline để test nhanh mà không cần Cardano L1.
 Chế độ này mô phỏng genesis, protocol parameters và UTxO ban đầu.
@@ -378,7 +378,7 @@ Tất cả node phải đồng bộ seed và file cấu hình.
 | `--ledger-genesis FILE`             | File genesis mô phỏng Shelley L1.                                         |
 | `--ledger-protocol-parameters FILE` | Protocol parameters cho Hydra ledger. Mặc định: protocol-parameters.json. |
 
-## 9. Các lệnh phụ
+#### 6. Các lệnh phụ
 
 Nhóm lệnh tiện ích phục vụ việc chuẩn bị môi trường Hydra, như publish scripts hoặc sinh khóa Hydra.
 
@@ -387,7 +387,7 @@ Nhóm lệnh tiện ích phục vụ việc chuẩn bị môi trường Hydra, n
 | `publish-scripts` | Publish Hydra Plutus scripts lên chain → tạo TXID cho --hydra-scripts-tx-id. Tốn khoảng 50 ADA. |
 | `gen-hydra-key`   | Tạo cặp khóa Hydra (sk/vk) off-chain.                                                           |
 
-## 10. Information & Help
+#### 7. Information & Help
 
 Nhóm lệnh trợ giúp hiển thị phiên bản, thông tin scripts hoặc hướng dẫn đầy đủ.
 
@@ -499,7 +499,7 @@ credentials/
 cat credentials/alice-node.addr && echo &&
 cat credentials/alice-funds.addr && echo &&
 cat credentials/bob-node.addr && echo &&
-cat credentials/bob-funds.addr && echo &&
+cat credentials/bob-funds.addr && echo
 ```
 
 ### 2.1. Nhận ít nhất 100 tADA mỗi địa chỉ
@@ -588,7 +588,7 @@ sudo apt install jq curl
 
 ### 5.2. Khởi chạy Node Alice
 
-Tạo tmux để chạy Node
+Tạo tmux để chạy Node. Giúp chạy node nền tảng terminal mà không bị tắt khi đóng terminal. Mỗi Node nên chạy trên tmux session riêng.
 
 ```bash
 tmux new -t alice-hydra-node
@@ -615,22 +615,14 @@ hydra-node \
   --cardano-verification-key credentials/bob-node.vk
 ```
 
-Kết quả
+Kết quả đầu ra
+
+- Node Alice nhận ChainPoint, trạng thái UTxO, và Tick từ blockchain.
+- Log dạng JSON cho biết node đã kết nối blockchain thành công.
+- Nếu API bị lỗi, ví dụ "ConnectionClosed", cần kiểm tra cổng API hoặc network.
 
 ```bash
-{"timestamp":"2025-11-06T04:11:14.378858461Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"point":{"blockHash":"5d2a89ce5fb0dfa022262e535d6e5f5daf3b83b7cef48b1049d707a2bc81011a","slot":95746274,"tag":"ChainPoint"},"tag":"BeginUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:11:14.378878411Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"newUTxO":{},"tag":"EndUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:11:14.378880264Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"point":{"blockHash":"5d2a89ce5fb0dfa022262e535d6e5f5daf3b83b7cef48b1049d707a2bc81011a","slot":95746274,"tag":"ChainPoint"},"receivedTxIds":["3f2e153df2f70bfb08602c0ce8556b8d6d58738b3ea502394a961f0a160d5e38"],"tag":"RolledForward"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:11:14.453863795Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"input":{"chainEvent":{"chainSlot":95746274,"chainTime":"2025-11-06T04:11:14Z","tag":"Tick"},"tag":"ChainInput"},"inputId":15,"tag":"BeginInput"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:11:14.453882302Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"outcome":{"effects":[],"stateChanges":[{"chainSlot":95746274,"tag":"TickObserved"}],"tag":"Continue"},"tag":"LogicOutcome"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:11:14.454060711Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"inputId":15,"tag":"EndInput"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:12:05.736551107Z","threadId":582,"namespace":"HydraNode-\"alice-node2\"","message":{"api":{"reason":"ConnectionClosed","tag":"APIConnectionError"},"tag":"APIServer"}}
-{"timestamp":"2025-11-06T04:12:12.564391526Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"point":{"blockHash":"9c2fff431f2db421df24f2966b832ae2359cb4a6895510e402967f318e998edf","slot":95746332,"tag":"ChainPoint"},"tag":"BeginUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:12:12.565149037Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"newUTxO":{},"tag":"EndUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:12:12.565162457Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"point":{"blockHash":"9c2fff431f2db421df24f2966b832ae2359cb4a6895510e402967f318e998edf","slot":95746332,"tag":"ChainPoint"},"receivedTxIds":["af1fd7f9a51064d26883f79d522038d3dac310c94142e454192fbb435a125c29"],"tag":"RolledForward"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:12:12.676835661Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"input":{"chainEvent":{"chainSlot":95746332,"chainTime":"2025-11-06T04:12:12Z","tag":"Tick"},"tag":"ChainInput"},"inputId":16,"tag":"BeginInput"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:12:12.67684846Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"outcome":{"effects":[],"stateChanges":[{"chainSlot":95746332,"tag":"TickObserved"}],"tag":"Continue"},"tag":"LogicOutcome"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:12:12.677019447Z","threadId":82,"namespace":"HydraNode-\"alice-node2\"","message":{"node":{"by":{"vkey":"37f06d9d5b6c4bebc5680c17e3f425419416ced292906373c89374cdd46c7d43"},"inputId":16,"tag":"EndInput"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:11:14.378858461Z","threadId":62,"namespace":"HydraNode-\"alice-node2\"","message":{"directChain":{"contents":{"point":
 {"timestamp":"2025-11-06T04:12:22.057429347Z","threadId":73,"namespace":"HydraNode-\"alice-node2\"","message":{"network":{"contents":{"etcd":{"caller":"etcdserver/raft.go:427","exceeded-duration":"1.337832ms","expected-duration":"200ms","heartbeat-interval":"100ms","level":"warn","msg":"leader failed to send out heartbeat on time; took too long, leader is overloaded likely from slow disk","to":"33be72d937d7d2df","ts":"2025-11-06T05:12:22.049210+0100"},"tag":"EtcdLog"},"tag":"Etcd"},"tag":"Network"}}
 ```
 
@@ -665,16 +657,7 @@ Kết quả
 
 ```bash
 {"timestamp":"2025-11-06T04:11:14.380739503Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"point":{"blockHash":"5d2a89ce5fb0dfa022262e535d6e5f5daf3b83b7cef48b1049d707a2bc81011a","slot":95746274,"tag":"ChainPoint"},"tag":"BeginUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:11:14.380744671Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"newUTxO":{},"tag":"EndUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:11:14.380746213Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"point":{"blockHash":"5d2a89ce5fb0dfa022262e535d6e5f5daf3b83b7cef48b1049d707a2bc81011a","slot":95746274,"tag":"ChainPoint"},"receivedTxIds":["3f2e153df2f70bfb08602c0ce8556b8d6d58738b3ea502394a961f0a160d5e38"],"tag":"RolledForward"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:11:14.446301172Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"input":{"chainEvent":{"chainSlot":95746274,"chainTime":"2025-11-06T04:11:14Z","tag":"Tick"},"tag":"ChainInput"},"inputId":15,"tag":"BeginInput"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:11:14.446314242Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"outcome":{"effects":[],"stateChanges":[{"chainSlot":95746274,"tag":"TickObserved"}],"tag":"Continue"},"tag":"LogicOutcome"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:11:14.446475114Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"inputId":15,"tag":"EndInput"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:12:12.564849355Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"point":{"blockHash":"9c2fff431f2db421df24f2966b832ae2359cb4a6895510e402967f318e998edf","slot":95746332,"tag":"ChainPoint"},"tag":"BeginUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:12:12.564866791Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"newUTxO":{},"tag":"EndUpdate"},"tag":"Wallet"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:12:12.564868404Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"point":{"blockHash":"9c2fff431f2db421df24f2966b832ae2359cb4a6895510e402967f318e998edf","slot":95746332,"tag":"ChainPoint"},"receivedTxIds":["af1fd7f9a51064d26883f79d522038d3dac310c94142e454192fbb435a125c29"],"tag":"RolledForward"},"tag":"DirectChain"}}
-{"timestamp":"2025-11-06T04:12:12.682620978Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"input":{"chainEvent":{"chainSlot":95746332,"chainTime":"2025-11-06T04:12:12Z","tag":"Tick"},"tag":"ChainInput"},"inputId":16,"tag":"BeginInput"},"tag":"Node"}}
-{"timestamp":"2025-11-06T04:12:12.682633267Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"outcome":{"effects":[],"stateChanges":[{"chainSlot":95746332,"tag":"TickObserved"}],"tag":"Continue"},"tag":"LogicOutcome"},"tag":"Node"}}
+{"timestamp":"2025-11-06T04:11:14.380744671Z","threadId":62,"namespace":"HydraNode-\"bob-node2\"","message":{"directChain":{"contents":{"newUTxO":{},ue"},"tag":"LogicOutcome"},"tag":"Node"}}
 {"timestamp":"2025-11-06T04:12:12.682777033Z","threadId":93,"namespace":"HydraNode-\"bob-node2\"","message":{"node":{"by":{"vkey":"75944646ac58771a88496a2a951c24481ac9554cc5c7af12fb7b596345b9ab27"},"inputId":16,"tag":"EndInput"},"tag":"Node"}}
 ```
 
