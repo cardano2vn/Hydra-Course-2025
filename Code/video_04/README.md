@@ -20,37 +20,22 @@
 
 ## 📌 Giới thiệu
 
-Phần này tập trung vào việc tổng hợp và củng cố các kiến thức nền tảng quan trọng trước khi bước vào xây dựng một DApp thực tế trên Hydra.
-
-Cụ thể, nội dung bao gồm:
-
-- 🔁 Ôn tập và hệ thống hóa kiến thức cốt lõi
-  Làm rõ toàn bộ quy trình xây dựng và vận hành một Hydra Head, từ khởi tạo, commit tài sản, mở head cho đến khi đóng và fan-out về Layer 1.
-- 🌐 Cấu hình và expose Hydra Node trên VPS
-  Hướng dẫn cách thiết lập môi trường, mở port và export địa chỉ IP để cho phép các ứng dụng bên ngoài (frontend/DApp) có thể kết nối trực tiếp tới Hydra Node thông qua API.
-- ⚖️ So sánh với các giải pháp Layer 2 khác
-  Phân tích sự khác biệt giữa Hydra và các giải pháp tiêu biểu như Lightning Network (Bitcoin), nhằm làm rõ:
-  - Sự khác biệt trong kiến trúc (multi-party vs payment channel).
-  - Cách quản lý trạng thái (full ledger vs balance-based).
-  - Khả năng mở rộng và lập trình (smart contract vs micropayment)
+Trong phần này, chúng ta sẽ thực hiện cài đặt và cấu hình một node của Cardano trên môi trường Ubuntu. Đây là bước nền tảng và bắt buộc nếu bạn muốn làm việc sâu hơn với hệ sinh thái Cardano, đặc biệt là các giải pháp mở rộng Layer-2 như Hydra.
+Thay vì đồng bộ blockchain theo cách truyền thống mất nhiều giờ hoặc thậm chí nhiều ngày, chúng ta sẽ sử dụng Mithril để rút ngắn thời gian sync xuống chỉ còn khoảng 15 phút. Điều này giúp bạn nhanh chóng có một node hoạt động đầy đủ để phục vụ cho việc phát triển và thử nghiệm.
+Ngoài ra, bạn cũng sẽ học cách duy trì node hoạt động liên tục 24/7, thực hiện các giao dịch cơ bản, và chuẩn bị môi trường sẵn sàng để triển khai Hydra Head trong các phần tiếp theo.
 
 ---
 
 ## 🎯 Mục tiêu
 
-Sau khi hoàn thành phần này, bạn sẽ có được một nền tảng kiến thức vững chắc để bước vào giai đoạn xây dựng DApp thực tế trên Hydra, bao gồm:
+Sau khi hoàn thành phần này, bạn sẽ có thể:
 
-- 🔍 Hiểu rõ cách một Hydra Head hoạt động trong thực tế
-  Bạn sẽ nắm được toàn bộ vòng đời của một Hydra Head, từ giai đoạn khởi tạo (init), commit tài sản từ Layer 1, mở head để thực hiện giao dịch off-chain, cho đến khi đóng head và fan-out trạng thái cuối cùng về lại blockchain. Đồng thời, bạn cũng hiểu được cách các bên tham gia tương tác và đồng thuận với nhau trong môi trường Hydra.
-- ⚙️ Biết cách triển khai và expose Hydra Node trên môi trường VPS
-  Bạn sẽ có khả năng tự thiết lập một hệ thống Hydra Node chạy trên VPS, cấu hình các port cần thiết, mở firewall và export địa chỉ IP để cho phép truy cập từ bên ngoài. Điều này giúp bạn đưa Hydra từ môi trường local lên môi trường thực tế, sẵn sàng cho việc tích hợp với các ứng dụng khác.
-- 🔗 Nắm được cách tích hợp Hydra với ứng dụng bên ngoài (DApp/Frontend)
-  Bạn sẽ hiểu cách các ứng dụng client (frontend hoặc backend) giao tiếp với Hydra thông qua API, từ đó có thể xây dựng các DApp có khả năng gửi giao dịch, truy vấn trạng thái và tương tác trực tiếp với Hydra Head một cách mượt mà, thay vì thao tác thủ công qua terminal.
-- ⚖️ Phân biệt rõ Hydra với các giải pháp Layer 2 khác
-  Không chỉ dừng lại ở việc sử dụng, bạn còn hiểu sâu về sự khác biệt giữa Hydra và các giải pháp như Lightning Network, thông qua các khía cạnh quan trọng:
-  Kiến trúc: Hydra sử dụng mô hình multi-party state channel với shared state, trong khi Lightning sử dụng payment channel giữa hai bên.
-- Use case: Hydra phù hợp cho các DApp phức tạp (DeFi, NFT, logic on-chain), còn Lightning tối ưu cho thanh toán nhanh (micropayment).
-- Khả năng mở rộng: Hydra cho phép xử lý nhiều giao dịch với logic phức tạp trong một head, trong khi Lightning mở rộng thông qua mạng lưới routing toàn cầu.
+- Cài đặt và cấu hình thành công Cardano Node trên Ubuntu bằng binary.
+- Đồng bộ node nhanh chóng bằng Mithril thay vì sync truyền thống.
+- Hiểu được cách node hoạt động và vai trò của nó trong mạng Cardano.
+- Vận hành node ổn định 24/7 bằng các công cụ như tmux hoặc systemd.
+- Thực hiện được một giao dịch cơ bản trên mạng Preview thông qua node đã cài đặt.
+- Chuẩn bị đầy đủ môi trường để triển khai Hydra Head trong các bài học tiếp theo.
 
 ---
 
@@ -275,7 +260,7 @@ git rev ca1ec278070baf4481564a6ba7b4a5b9e3d9f366
 
 ---
 
-## Chạy Cardano Node 10.5.1 & Đồng bộ với mạng
+## Chạy Cardano Node 10.5.2 & Đồng bộ với mạng
 
 Để đưa Cardano Node vào trạng thái hoạt động, bạn cần đồng bộ dữ liệu blockchain.  
 Có hai phương thức phổ biến: **dùng snapshot truyền thống** hoặc **dùng Mithril (khuyến nghị)** – giải pháp đồng bộ nhanh thế hệ mới.
@@ -440,6 +425,8 @@ export PATH="$(pwd)/bin:$PATH"
 
 ### Bước 2: Liệt kê các snapshot Mithril có sẵn
 
+
+
 ```bash
 mithril-client cardano-db snapshot list
 ```
@@ -547,7 +534,7 @@ Sau khi Cardano Node đã chạy và CLI hoạt động bình thường, bạn c
 
 ## 7.1 Tạo khóa & địa chỉ thanh toán
 
-Tạo cặp khóa:
+Tạo cặp khóa (verification key & signing key)
 
 ```bash
 cardano-cli address key-gen   --verification-key-file payment.vkey   --signing-key-file payment.skey   --testnet-magic 2
@@ -619,6 +606,8 @@ cardano-cli transaction submit   --tx-file tx.signed   --testnet-magic 2
 ```bash
 cardano-cli query utxo   --address $RECEIVER_ADDR   --testnet-magic 2
 ```
+
+---
 
 <div align="center">
 

@@ -18,28 +18,15 @@
 
 ## 📌 Giới thiệu
 
-Trong môi trường blockchain Cardano, Hydra Nodes đóng vai trò quan trọng trong việc triển khai các Hydra Heads, giúp mở rộng khả năng xử lý giao dịch off-chain một cách nhanh chóng và hiệu quả. Tuy nhiên, vận hành Hydra Node không phải lúc nào cũng suôn sẻ — hệ thống có thể gặp các lỗi từ tầng cơ sở (system-level) cho tới tầng ứng dụng (application-level).
+Nhận diện các lỗi thường gặp khi triển khai và vận hành Hydra Node.
+Phân tích nguyên nhân lỗi theo từng tầng, từ L1 Cardano đến L2 Hydra.
+Áp dụng quy trình xử lý chuẩn dựa trên log và công cụ debug realtime.
+Đảm bảo Hydra Head mở/đóng an toàn và giao dịch L2 hoạt động ổn định.
 
-Phần này sẽ cung cấp cho bạn cái nhìn tổng quan về:
-
-- Vòng đời thực sự của Hydra Head: từ khi tạo Head, vận hành, cho đến khi đóng Head và đồng bộ dữ liệu on-chain.
-- Vai trò của các thành phần: phân biệt giữa Operators (người vận hành Node) và Delegators (người tham gia Head) trong việc quản lý và đảm bảo an toàn giao dịch.
-- Mô hình tin cậy (Trust Model) và rủi ro bảo mật: hiểu cách thông tin được chia sẻ và bảo vệ trong mạng lưới Hydra.
-- Đánh giá an toàn của Hydra Head: nhận biết các yếu tố nguy cơ, xác định lỗi tiềm ẩn và chuẩn bị các biện pháp phòng ngừa.
-
-Thông qua đó, bạn sẽ nắm vững cơ chế vận hành của Hydra Nodes và cách thức phát hiện, phân tích các lỗi phổ biến trong quá trình vận hành.
 
 ---
 
 ## 🎯 Mục tiêu
-
-Sau khi hoàn tất phần này, bạn sẽ có khả năng:
-
-1. Nhận diện lỗi phổ biến trong quá trình vận hành Hydra Nodes, từ các lỗi cấu hình cơ bản đến lỗi liên quan đến mạng và blockchain.
-2. Hiểu cơ chế gây lỗi ở từng tầng hệ thống, bao gồm cả system-level, network-level, và application-level.
-3. Triển khai các bước xử lý chuẩn để khắc phục sự cố một cách nhanh chóng và hiệu quả, đảm bảo Hydra Head hoạt động ổn định liên tục.
-4. Đánh giá rủi ro bảo mật và áp dụng các biện pháp phòng ngừa, từ việc cấu hình Node đúng cách đến quản lý quyền truy cập và quyền tham gia của Operators/Delegators.
-5. Tăng cường khả năng vận hành liên tục cho Hydra Nodes trong môi trường thử nghiệm lẫn môi trường sản xuất.
 
 ---
 

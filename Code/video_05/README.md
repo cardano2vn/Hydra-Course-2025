@@ -708,6 +708,8 @@ Kết quả
 
 Khi `"networkConnected": true` và `"peersInfo": { "127.0.0.1:5002": true }` chứng tỏ thành công
 
+---
+
 <div align="center">
 
 ## 📚 **Tài liệu tham khảo**
