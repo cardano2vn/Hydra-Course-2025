@@ -21,14 +21,13 @@ Theo dõi tiến độ tại [hydra.family](https://hydra.family)
 
 ## 📌 Giới thiệu
 
-Trong phần này,  Cùng nhau tìm hiểu những nội dung cốt lõi về Hydra:
+Trong phần này, Cùng nhau tìm hiểu những nội dung cốt lõi về Hydra:
 
 - Thứ nhất, hiểu tổng quan về Hydra – không chỉ là một công nghệ Layer-2, mà còn là một phần chiến lược quan trọng trong hệ sinh thái Cardano.
 - Thứ hai, nhận biết tại sao Layer-2 là tất yếu – chúng ta sẽ thấy rõ những giới hạn hiện tại của Layer-1 và lý do cần một giải pháp mở rộng mạnh mẽ như Hydra.
 - Thứ ba, khám phá cách Hydra hoạt động ở mức khái niệm – không đi sâu vào code hay thuật toán phức tạp, mà tập trung vào bản chất và nguyên lý vận hành.
 - Thứ tư, tìm hiểu 4 đặc điểm cốt lõi của Hydra: Tốc độ xử lý giao dịch cao. Chi phí tối ưu. Bảo mật vững chắc. Khả năng mở rộng gần như không giới hạn
 - Thứ năm, xem xét các ứng dụng thực tế – từ DeFi, NFT, gaming cho đến các dApp thời gian thực, và cách Hydra giúp những ứng dụng này trở nên khả thi hơn bao giờ hết.
-
 
 ---
 
@@ -380,10 +379,10 @@ Hydra là một trong những bước tiến quan trọng nhất trong chiến l
 <p>
 
 <a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/introduction-to-hydra-exploring-the-future-of-cardanos-layer-2-scaling-and-practical-use-cases"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
-<a href="YOUR_SLIDES_LINK"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
-<a href="YOUR_GITHUB_LINK"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
-<a href="YOUR_ARTICLE_LINK"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
-<a href="YOUR_YOUTUBE_LINK"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
+<a href="https://docs.google.com/presentation/d/16XjWCYfsjugHwTKSeluslssTU13uLa4v/edit?slide=id.p1#slide=id.p1"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
+<a href="https://github.com/cardano2vn/Hydra-Course-2025/tree/main/Code/video_01"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
+<a href="https://hydra-course-2025.vercel.app/document/chapter-01/video-01"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
+<a href="https://www.youtube.com/watch?v=3rO7EuTN3t8&t=313s"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
 
 </p>
 
