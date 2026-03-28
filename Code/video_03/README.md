@@ -425,7 +425,7 @@ Mô tả các bước chính để tạo và truy cập một VPS trên Contabo.
 ssh root@your-vps-ip
 ```
 
-## </details>
+</details>
 
 ### ✅ Bài 4: Hiểu lệnh cập nhật hệ thống
 
@@ -500,11 +500,11 @@ Giải thích vai trò của các công cụ sau trong quá trình setup Hydra:
 
 <p>
 
-<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/introduction-to-hydra-exploring-the-future-of-cardanos-layer-2-scaling-and-practical-use-cases"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
-<a href="https://drive.google.com/open?id=1gUveo68EbyMDkEUiVd-NG17FIn0b53WA&usp=drive_copy"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
-<a href="https://github.com/cardano2vn/Hydra-Course-2025/blob/main/Code/video_03/README.md"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
-<a href="YOUR_ARTICLE_LINK"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
-<a href="YOUR_YOUTUBE_LINK"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
+<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/setting-up-your-hydra-development-environment-tools-dependencies-and-best-practices"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
+<a href="https://docs.google.com/presentation/d/1gUveo68EbyMDkEUiVd-NG17FIn0b53WA/edit?slide=id.p1#slide=id.p1"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
+<a href="https://github.com/cardano2vn/Hydra-Course-2025/blob/main/Code/video_03"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
+<a href="https://hydra-course-2025.vercel.app/document/chapter-01/video-03"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
+<a href="https://www.youtube.com/watch?v=oYMKJjB7Qkc&t=500s"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
 
 </p>
 
