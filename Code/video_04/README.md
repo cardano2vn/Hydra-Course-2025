@@ -425,8 +425,6 @@ export PATH="$(pwd)/bin:$PATH"
 
 ### Bước 2: Liệt kê các snapshot Mithril có sẵn
 
-
-
 ```bash
 mithril-client cardano-db snapshot list
 ```
@@ -617,11 +615,11 @@ cardano-cli query utxo   --address $RECEIVER_ADDR   --testnet-magic 2
 
 <p>
 
-<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/introduction-to-hydra-exploring-the-future-of-cardanos-layer-2-scaling-and-practical-use-cases"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
-<a href="YOUR_SLIDES_LINK"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
-<a href="YOUR_GITHUB_LINK"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
-<a href="YOUR_ARTICLE_LINK"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
-<a href="YOUR_YOUTUBE_LINK"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
+<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/installing-and-configuring-the-cardano-node-building-the-foundation-for-hydra-operations"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
+<a href="https://docs.google.com/presentation/d/1tI3DYQafqnGvi3W5Wvc1MvJ4RBBrWxSy/edit?slide=id.p1#slide=id.p1"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
+<a href="https://github.com/cardano2vn/Hydra-Course-2025/tree/main/Code/video_04"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
+<a href="https://hydra-course-2025.vercel.app/document/chapter-01/video-04"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
+<a href="https://www.youtube.com/watch?v=K36algXxY3s&list=PLoQ07ewXairlrp5T6MV2oMOjKF8l9K4qA&index=3"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
 
 </p>
 

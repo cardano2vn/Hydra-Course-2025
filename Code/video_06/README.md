@@ -846,11 +846,11 @@ Trong video này, chúng ta đã tìm hiểu về cách thực hiện giao dịc
 
 <p>
 
-<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/introduction-to-hydra-exploring-the-future-of-cardanos-layer-2-scaling-and-practical-use-cases"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
-<a href="YOUR_SLIDES_LINK"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
-<a href="YOUR_GITHUB_LINK"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
-<a href="YOUR_ARTICLE_LINK"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
-<a href="YOUR_YOUTUBE_LINK"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
+<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/running-your-first-hydra-head-launching-managing-and-observing-on-chain-and-off-chain-activity/"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
+<a href="https://docs.google.com/presentation/d/1lxgBPT84J0FszsPkRIswWZRGYCIJ5t5d/edit?slide=id.p1#slide=id.p1"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
+<a href="https://github.com/cardano2vn/Hydra-Course-2025/tree/main/Code/video_06"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
+<a href="https://hydra-course-2025.vercel.app/document/chapter-02/video-06"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
+<a href="https://www.youtube.com/watch?v=Qp5a7_BH3f4&list=PLoQ07ewXairlrp5T6MV2oMOjKF8l9K4qA"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
 
 </p>
 
