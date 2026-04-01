@@ -2,7 +2,7 @@
 
 <img src="https://hydra.family/head-protocol/img/hydra.png" width="120" alt="HydraTipJar Logo" />
 
-# **HydraTipJar**
+# **Hydra TipJar**
 
 **A decentralized tipping platform powered by Cardano's Hydra Layer 2 for instant, low-fee micropayments to creators and communities**
 
@@ -16,7 +16,7 @@
 
 </div>
 
-## About HydraTipJar
+## About Hydra TipJar
 
 HydraTipJar is an open-source decentralized application (dApp) designed to transform how creators, streamers, and communities receive tips using the Cardano blockchain. By harnessing the power of Cardano's Layer 2 (L2) scaling solution, **Hydra**, HydraTipJar delivers instant, near-zero-fee transactions, making it an ideal solution for micropayments as small as 0.1 ADA. This platform eliminates the high fees and centralized control of traditional tipping systems (e.g., Patreon, Ko-fi, or Twitch, which can charge up to 30%) while offering a secure, transparent, and user-friendly experience.
 
