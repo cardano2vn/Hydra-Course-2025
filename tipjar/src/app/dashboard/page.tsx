@@ -1,301 +1,538 @@
-import styles from './dashboard.module.css';
+"use client";
 
-export default function DashboardPage() {
-  return (
-    <main className={styles.dashboardPage}>
-      <div className={styles.dashboardContainer}>
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { motion } from "framer-motion";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import Link from "next/link";
+import Image from "next/image";
+import { z } from "zod";
+import Tipper from "~/components/tipper";
+import Status from "~/components/status";
+import Balance from "~/components/balance";
+import Info from "~/components/info";
+import Recent from "~/components/recent";
+import Withdraw from "~/components/withdraw";
+import Loading from "~/components/loading";
+import { useWallet } from "~/hooks/use-wallet";
+import { images } from "~/public/images";
+import { routers } from "~/constants/routers";
+import { DECIMAL_PLACE, HeadStatus } from "~/constants/common";
+import { createProposal, getProposal, getProposals } from "~/services/tipjar.service";
+import { commit, getStatus } from "~/services/hydra.service";
+import { getUTxOOnlyLovelace, submitTx } from "~/services/mesh.service";
+import { CreatorSchema } from "~/lib/schema";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
+import { isNil } from "lodash";
 
-        {/* ── Status Banner ── */}
-        <div className={styles.statusBanner}>
-          <div className={styles.statusIconWrapper}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3.20837 7.18333C3.08674 6.63544 3.10542 6.0657 3.26267 5.52695C3.41992 4.9882 3.71066 4.49787 4.10793 4.10143C4.5052 3.705 4.99613 3.41529 5.53521 3.25916C6.07429 3.10304 6.64407 3.08555 7.19171 3.20833C7.49313 2.73692 7.90837 2.34897 8.39916 2.08024C8.88995 1.81151 9.44049 1.67065 10 1.67065C10.5596 1.67065 11.1101 1.81151 11.6009 2.08024C12.0917 2.34897 12.5069 2.73692 12.8084 3.20833C13.3568 3.08502 13.9276 3.10242 14.4675 3.25893C15.0075 3.41543 15.4991 3.70595 15.8966 4.10346C16.2941 4.50097 16.5846 4.99256 16.7411 5.5325C16.8976 6.07244 16.915 6.64319 16.7917 7.19167C17.2631 7.49309 17.6511 7.90834 17.9198 8.39912C18.1885 8.88991 18.3294 9.44046 18.3294 10C18.3294 10.5595 18.1885 11.1101 17.9198 11.6009C17.6511 12.0917 17.2631 12.5069 16.7917 12.8083C16.9145 13.356 16.897 13.9257 16.7409 14.4648C16.5848 15.0039 16.295 15.4948 15.8986 15.8921C15.5022 16.2894 15.0118 16.5801 14.4731 16.7374C13.9343 16.8946 13.3646 16.9133 12.8167 16.7917C12.5157 17.2649 12.1001 17.6545 11.6085 17.9244C11.1168 18.1944 10.5651 18.3359 10.0042 18.3359C9.44335 18.3359 8.89156 18.1944 8.39993 17.9244C7.90831 17.6545 7.49274 17.2649 7.19171 16.7917C6.64407 16.9144 6.07429 16.897 5.53521 16.7408C4.99613 16.5847 4.5052 16.295 4.10793 15.8986C3.71066 15.5021 3.41992 15.0118 3.26267 14.473C3.10542 13.9343 3.08674 13.3646 3.20837 12.8167C2.73334 12.516 2.34205 12.1001 2.07091 11.6077C1.79977 11.1152 1.65759 10.5622 1.65759 10C1.65759 9.43783 1.79977 8.88479 2.07091 8.39232C2.34205 7.89985 2.73334 7.48396 3.20837 7.18333Z" stroke="#8EC5FF" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M10 6.66663V9.99996" stroke="#8EC5FF" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M10 13.3334H10.0083" stroke="#8EC5FF" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <div className={styles.statusContent}>
-            <p className={styles.statusMessage}>
-              There is now a head available for you to access and below is the current state of your head
-            </p>
-            <div className={styles.statusRow}>
-              <span className={styles.statusLabel}>Status:</span>
-              <span className={styles.statusBadge}>IDLE</span>
-            </div>
-          </div>
-        </div>
+type Form = z.infer<typeof CreatorSchema>;
 
-        {/* ── Main Content Grid ── */}
-        <section className={styles.contentGrid}>
+export default function Dashboard() {
+    const { status: sessionStatus } = useSession();
+    const queryClient = useQueryClient();
+    const { address, signTx } = useWallet();
+    const [loading, setLoading] = useState(false);
 
-          {/* Form Panel */}
-          <div className={styles.formPanel}>
-            <form className={styles.registerForm}>
+    const { data: proposalData, isLoading: isProposalLoading } = useQuery({
+        queryKey: ["proposal", address],
+        queryFn: () => getProposal({ walletAddress: address as string }),
+        enabled: !!address && sessionStatus === "authenticated",
+    });
 
-              {/* Title */}
-              <div className={styles.fieldWrapper}>
-                <span className={styles.floatingLabel}>Title</span>
-                <input
-                  id="title"
-                  type="text"
-                  placeholder="Enter your title"
-                  className={styles.formInput}
-                />
-              </div>
+    const { data: proposals } = useQuery({
+        queryKey: ["proposals", address],
+        queryFn: () => getProposals({ limit: 12, page: 1, walletAddress: address || "" }),
+    });
 
-              {/* Description */}
-              <div className={styles.fieldWrapper}>
-                <span className={styles.floatingLabel}>Description</span>
-                <textarea
-                  id="description"
-                  placeholder="Enter your description"
-                  className={styles.formTextarea}
-                />
-              </div>
+    const { data: statusData, isLoading: isStatusLoading } = useQuery({
+        queryKey: ["status", address],
+        queryFn: () => getStatus({ walletAddress: address as string, isCreator: true }),
+        enabled: !!address && sessionStatus === "authenticated",
+    });
 
-              {/* Author */}
-              <div className={styles.fieldWrapper}>
-                <span className={styles.floatingLabel}>Author</span>
-                <input
-                  id="author"
-                  type="text"
-                  placeholder="Enter your author name"
-                  className={styles.formInput}
-                />
-              </div>
+    const { data: utxoData, isLoading: isUtxoLoading } = useQuery({
+        queryKey: ["utxos", address],
+        queryFn: () => getUTxOOnlyLovelace({ walletAddress: address as string, quantity: DECIMAL_PLACE * 10 }),
+        enabled: !!address && sessionStatus === "authenticated",
+    });
 
-              {/* Image URL */}
-              <div className={styles.fieldWrapper}>
-                <span className={styles.floatingLabel}>Image URL</span>
-                <input
-                  id="imageUrl"
-                  type="url"
-                  placeholder="Enter your image URL"
-                  className={styles.formInput}
-                />
-              </div>
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+        control,
+        watch,
+    } = useForm<Form>({
+        resolver: zodResolver(CreatorSchema),
+        defaultValues: {
+            title: "",
+            description: "",
+            author: "",
+            image: "",
+            startDate: "",
+            endDate: "",
+            participants: 2,
+            adaCommit: undefined,
+        },
+    });
 
-              {/* Start Date */}
-              <div className={styles.fieldWrapper}>
-                <span className={styles.floatingLabel}>Start Date</span>
-                <input
-                  id="startDate"
-                  type="date"
-                  className={styles.formInput}
-                />
-              </div>
+    const formValues = watch();
 
-              {/* End Date */}
-              <div className={styles.fieldWrapper}>
-                <span className={styles.floatingLabel}>End Date</span>
-                <input
-                  id="endDate"
-                  type="date"
-                  className={styles.formInput}
-                />
-              </div>
+    const onSubmit = useCallback(
+        async (data: Form) => {
+            if (!address || !data.adaCommit) return;
+            try {
+                setLoading(true);
 
-              {/* Max Participants */}
-              <div className={styles.fieldWrapper}>
-                <span className={styles.floatingLabel}>Max Participants</span>
-                <input
-                  id="participants"
-                  type="number"
-                  defaultValue={2}
-                  min={1}
-                  className={styles.formInput}
-                />
-              </div>
+                const unsignedTx = await commit({
+                    walletAddress: address,
+                    input: {
+                        txHash: data.adaCommit.txHash,
+                        outputIndex: data.adaCommit.outputIndex,
+                    },
+                    isCreator: true,
+                    status: statusData as string,
+                });
 
-              {/* Select ADA Commit */}
-              <div className={styles.fieldWrapper}>
-                <span className={styles.floatingLabel}>Select ADA Commit</span>
-                <select id="adaCommit" className={styles.formSelect} defaultValue="">
-                  <option value="" disabled>-- Select amount --</option>
-                  <option value="10">10 ADA</option>
-                  <option value="25">25 ADA</option>
-                  <option value="50">50 ADA</option>
-                  <option value="100">100 ADA</option>
-                </select>
-              </div>
+                const signedTx = await signTx(unsignedTx as string);
+                await submitTx({ signedTx });
 
-              {/* Submit */}
-              <div className={styles.submitWrapper}>
-                <button type="submit" className={styles.registerButton}>
-                  Register
-                </button>
-              </div>
+                await createProposal({
+                    walletAddress: address,
+                    assetName: data.author,
+                    metadata: {
+                        title: data.title,
+                        description: data.description,
+                        author: data.author,
+                        image: (data?.image as string) || "",
+                        startDate: data.startDate,
+                        endDate: data.endDate,
+                        participants: data.participants,
+                    },
+                });
 
-            </form>
-          </div>
+                toast.success("Proposal created successfully!");
+                queryClient.invalidateQueries({ queryKey: ["status", "proposal", "proposals"] });
+                await Promise.allSettled([
+                    queryClient.invalidateQueries({ queryKey: ["balance-tip"] }),
+                    queryClient.invalidateQueries({ queryKey: ["balance-commit"] }),
+                    queryClient.invalidateQueries({ queryKey: ["status"] }),
+                    queryClient.invalidateQueries({ queryKey: ["recents"] }),
+                    queryClient.invalidateQueries({ queryKey: ["proposal"] }),
+                ]);
+            } catch (error) {
+                toast.error("Proposal created feild !");
+            } finally {
+                setLoading(false);
+            }
+        },
+        [address, signTx, queryClient, statusData],
+    );
 
-          {/* Project Card */}
-          <div className={styles.projectCard}>
-            <div className={styles.projectImagePlaceholder}>
-              <svg viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-                <rect width="500" height="300" fill="#071020"/>
-                <ellipse cx="380" cy="80" rx="200" ry="200" fill="#0e6fc0" opacity="0.7"/>
-                <ellipse cx="300" cy="200" rx="220" ry="140" fill="#0a4fa0" opacity="0.6"/>
-                <path d="M100 260 Q200 80 400 120 Q480 150 520 80" stroke="#1a9fe8" strokeWidth="40" fill="none" opacity="0.8"/>
-                <path d="M-20 180 Q120 60 300 140 Q420 200 500 100" stroke="#0d7fd4" strokeWidth="55" fill="none" opacity="0.7"/>
-                <path d="M60 300 Q180 120 360 180 Q460 220 520 160" stroke="#1abbf0" strokeWidth="30" fill="none" opacity="0.5"/>
-              </svg>
-            </div>
-            <div className={styles.projectCardBody}>
-              <h2 className={styles.projectTitle}>
-                Open source dynamic assets (Token/NFT) generator (CIP68)
-              </h2>
-              <div className={styles.projectMeta}>
-                <div className={styles.projectMetaLeft}>
-                  <span className={styles.projectDate}>09/03/2026, 11:37</span>
-                  <span className={styles.projectAuthor}>by Cardano2vn</span>
-                  <span className={styles.projectParticipants}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8.00001 2.66675C7.29277 2.66675 6.61449 2.9477 6.11439 3.4478C5.6143 3.94789 5.33334 4.62617 5.33334 5.33341C5.33334 6.04066 5.6143 6.71894 6.11439 7.21903C6.61449 7.71913 7.29277 8.00008 8.00001 8.00008C8.70725 8.00008 9.38553 7.71913 9.88563 7.21903C10.3857 6.71894 10.6667 6.04066 10.6667 5.33341C10.6667 4.62617 10.3857 3.94789 9.88563 3.4478C9.38553 2.9477 8.70725 2.66675 8.00001 2.66675ZM8.00001 9.33341C5.42668 9.33341 3.33334 10.5267 3.33334 12.0001V13.3334H12.6667V12.0001C12.6667 10.5267 10.5733 9.33341 8.00001 9.33341Z" stroke="#99A1AF" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    2 participants
-                  </span>
+    const formInputs = useMemo(
+        () => [
+            { id: "title", label: "Title", type: "text", placeholder: "Enter your title" },
+            { id: "description", label: "Description", type: "textarea", placeholder: "Enter your description", rows: 4 },
+            { id: "author", label: "Author", type: "text", placeholder: "Enter your author name" },
+            { id: "image", label: "Image URL", type: "text", placeholder: "Enter your image URL" },
+            { id: "startDate", label: "Start Date", type: "date" },
+            { id: "endDate", label: "End Date", type: "date" },
+            { id: "participants", label: "Max Participants", type: "number", placeholder: "Enter max number of participants", min: 1, max: 1000 },
+        ],
+        [],
+    );
+
+    if (sessionStatus === "unauthenticated") {
+        redirect("/login");
+    }
+
+    // if (sessionStatus === "loading" || isProposalLoading || isStatusLoading || isUtxoLoading || loading) {
+    //     return <Loading />;
+    // }
+
+    if (isNil(proposalData?.data) && (statusData === HeadStatus.IDLE || statusData === HeadStatus.INITIALIZING)) {
+        return (
+            <motion.aside
+                className="container mx-auto py-8 px-4 pt-24"
+                variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.2, ease: "easeOut" },
+                    },
+                }}
+                initial="hidden"
+                animate="visible"
+            >
+                <div className="max-w-7xl mx-auto space-y-6 px-4 py-8">
+                    <motion.section
+                        className="w-full mb-6"
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                        }}
+                    >
+                        <Status
+                            title="There is now a head available for you to access and below is the current state of your head"
+                            loading={isStatusLoading}
+                            data={statusData as string}
+                        />
+                    </motion.section>
+                    <motion.section
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                        variants={{
+                            hidden: { opacity: 0 },
+                            visible: {
+                                opacity: 1,
+                                transition: { staggerChildren: 0.2, ease: "easeOut" },
+                            },
+                        }}
+                    >
+                        <div className="space-y-6 flex flex-col">
+                            <motion.div
+                                className="w-full max-w-2xl mx-auto rounded-xl h-full bg-white dark:bg-slate-900/50 p-6 shadow-md shadow-blue-200/30 dark:shadow-blue-900/30 border-l-4 border-blue-500 dark:border-blue-600"
+                                variants={{
+                                    hidden: { opacity: 0, y: 20 },
+                                    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                                }}
+                            >
+                                <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                                    {formInputs.map(({ id, label, type, placeholder, rows, min, max }, index) => (
+                                        <motion.div
+                                            key={id}
+                                            className="relative"
+                                            variants={{
+                                                hidden: { opacity: 0, y: 20 },
+                                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                                            }}
+                                            transition={{ delay: 0.2 + index * 0.1 }}
+                                        >
+                                            <label
+                                                htmlFor={id}
+                                                className="absolute rounded-xl z-10 -top-2 left-3 bg-white dark:bg-slate-900/50 px-1 text-sm font-medium text-gray-700 dark:text-gray-200 transition-all"
+                                            >
+                                                {label}
+                                            </label>
+                                            {type === "textarea" ? (
+                                                <textarea
+                                                    {...register(id as keyof Form)}
+                                                    id={id}
+                                                    rows={rows}
+                                                    placeholder={placeholder}
+                                                    className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 px-4 text-base text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors disabled:opacity-50"
+                                                    disabled={isSubmitting}
+                                                />
+                                            ) : (
+                                                <input
+                                                    {...register(id as keyof Form, { valueAsNumber: type === "number" })}
+                                                    id={id}
+                                                    type={type}
+                                                    placeholder={placeholder}
+                                                    min={min}
+                                                    max={max}
+                                                    className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 px-4 text-base text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors disabled:opacity-50"
+                                                    disabled={isSubmitting}
+                                                />
+                                            )}
+                                            {errors[id as keyof Form] && (
+                                                <motion.p
+                                                    className="text-red-500 text-xs mt-1 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded"
+                                                    initial={{ x: -10, opacity: 0 }}
+                                                    animate={{ x: 0, opacity: 1 }}
+                                                    transition={{ duration: 0.2, type: "spring", stiffness: 100 }}
+                                                >
+                                                    {errors[id as keyof Form]?.message}
+                                                </motion.p>
+                                            )}
+                                        </motion.div>
+                                    ))}
+                                    <motion.div
+                                        className="relative"
+                                        variants={{
+                                            hidden: { opacity: 0, y: 20 },
+                                            visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                                        }}
+                                        transition={{ delay: 0.8 }}
+                                    >
+                                        <label
+                                            htmlFor="adaCommit"
+                                            className="absolute rounded-xl z-10 -top-2 left-3 bg-white dark:bg-slate-900/50 px-1 text-sm font-medium text-gray-700 dark:text-gray-200 transition-all"
+                                        >
+                                            Select ADA Commit
+                                        </label>
+                                        <Controller
+                                            name="adaCommit"
+                                            control={control}
+                                            rules={{ required: "Please select an ADA amount" }}
+                                            render={({ field }) => (
+                                                <select
+                                                    id="adaCommit"
+                                                    className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 px-4 text-base text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors disabled:opacity-50"
+                                                    disabled={isSubmitting || !utxoData?.length}
+                                                    value={field.value ? JSON.stringify(field.value) : ""}
+                                                    onChange={(e) => field.onChange(e.target.value ? JSON.parse(e.target.value) : undefined)}
+                                                >
+                                                    <option value="">-- Select amount --</option>
+                                                    {utxoData?.map((utxo) => (
+                                                        <option key={`${utxo.txHash}-${utxo.outputIndex}`} value={JSON.stringify(utxo)}>
+                                                            {Number(utxo.amount) / DECIMAL_PLACE} ADA
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                        />
+                                        {errors.adaCommit && (
+                                            <motion.p
+                                                className="text-red-500 text-xs mt-1 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded"
+                                                initial={{ x: -10, opacity: 0 }}
+                                                animate={{ x: 0, opacity: 1 }}
+                                                transition={{ duration: 0.2, type: "spring", stiffness: 100 }}
+                                            >
+                                                {errors.adaCommit.message}
+                                            </motion.p>
+                                        )}
+                                    </motion.div>
+                                    <motion.div
+                                        className="bg-white dark:bg-slate-900/50 pt-4"
+                                        variants={{
+                                            hidden: { opacity: 0, y: 20 },
+                                            visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                                        }}
+                                        transition={{ delay: 0.9 }}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <button
+                                                    disabled={isSubmitting}
+                                                    className="w-full rounded-md bg-blue-500 dark:bg-blue-600 py-3 px-8 text-base font-semibold text-white dark:text-white shadow-lg hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                                >
+                                                    {isSubmitting ? "Submitting..." : "Register"}
+                                                </button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Confirm Proposal Registration</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        You need to commit more than 10 ADA to register as a proposal. This amount will be refunded
+                                                        when the session ends.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleSubmit(onSubmit)}>
+                                                        {isSubmitting ? "Committing..." : "Commit"}
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </motion.div>
+                                </form>
+                            </motion.div>
+                        </div>
+                        <motion.div
+                            className="space-y-6 flex flex-col"
+                            variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                            }}
+                        >
+                            <div className="h-full min-h-[calc(100%)]">
+                                <Tipper
+                                    title={formValues.title || "Open source dynamic assets (Token/NFT) generator (CIP68)"}
+                                    image={formValues.image || images.logo}
+                                    author={formValues.author || "Cardano2vn"}
+                                    slug=""
+                                    datetime={new Date().toLocaleString("en-GB", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    })}
+                                    participants={2}
+                                />
+                            </div>
+                        </motion.div>
+                    </motion.section>
                 </div>
-                <a href="#" className={styles.readMoreLink}>
-                  Read More
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 3.33325L10.6667 7.99992L6 12.6666" stroke="#51A2FF" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </div>
+            </motion.aside>
+        );
+    }
 
-        </section>
-      </div>
+    if (proposalData?.data?.walletAddress === address) {
+        return (
+            <motion.aside
+                className="container mx-auto py-8 px-4 pt-24"
+                variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.2, ease: "easeOut" },
+                    },
+                }}
+                initial="hidden"
+                animate="visible"
+            >
+                <div className="max-w-7xl mx-auto space-y-6 px-4 py-8">
+                    <motion.section
+                        className="w-full mb-6"
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                        }}
+                    >
+                        <Status
+                            title="There is now a head available for you to access and below is the current state of your head"
+                            loading={isStatusLoading}
+                            data={statusData as string}
+                        />
+                    </motion.section>
+                    <motion.section
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                        variants={{
+                            hidden: { opacity: 0 },
+                            visible: {
+                                opacity: 1,
+                                transition: { staggerChildren: 0.2, ease: "easeOut" },
+                            },
+                        }}
+                    >
+                        <div className="space-y-6 flex flex-col">
+                            <motion.div
+                                variants={{
+                                    hidden: { opacity: 0, y: 20 },
+                                    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                                }}
+                            >
+                                <Balance
+                                    status={statusData as string}
+                                    proposal={proposalData?.data}
+                                    walletAddress={address as string}
+                                    assetName={proposalData?.data?.author as string}
+                                />
+                            </motion.div>
+                            <motion.div
+                                variants={{
+                                    hidden: { opacity: 0, y: 20 },
+                                    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                                }}
+                            >
+                                <Info link={`https://tipjar.cardano2vn.io/tipper/${address}`} />
+                            </motion.div>
+                        </div>
+                        <motion.div
+                            className="space-y-6 flex flex-col"
+                            variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                            }}
+                        >
+                            <Recent walletAddress={address as string} />
+                        </motion.div>
+                    </motion.section>
+                    <motion.div
+                        className="w-full"
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                        }}
+                    >
+                        <Withdraw walletAddress={address as string} />
+                    </motion.div>
+                </div>
+            </motion.aside>
+        );
+    }
 
-      {/* ── Footer ── */}
-      <div className={styles.footerWrapper}>
-        <footer className={styles.footer}>
-          <div className={styles.footerDivider} />
+    if (
+        (statusData === HeadStatus.OPEN ||
+            statusData === HeadStatus.CLOSED ||
+            statusData === HeadStatus.FANOUT_POSSIBLE ||
+            statusData === HeadStatus.INITIALIZING) &&
+        proposalData?.data?.walletAddress !== address
+    ) {
+        return (
+            <motion.main
+                className="relative pt-20"
+                variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.2, ease: "easeOut" },
+                    },
+                }}
+                initial="hidden"
+                animate="visible"
+            >
+                <div className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
+                    <motion.div
+                        className="flex flex-col items-center justify-center py-16 text-center"
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                        }}
+                    >
+                        <motion.div
+                            className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900"
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                            <Image src={images.logo} alt="Logo" />
+                        </motion.div>
+                        <motion.h3
+                            className="text-2xl font-semibold text-gray-900 dark:text-white mb-2"
+                            variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                            }}
+                        >
+                            Head Is Currently In Use
+                        </motion.h3>
+                        <motion.p
+                            className="text-lg text-gray-600 dark:text-gray-300 max-w-md mb-6"
+                            variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                            }}
+                        >
+                            No tippers to display at the moment. Check back later or try a different page!
+                        </motion.p>
+                        <motion.div
+                            variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                            }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <Link
+                                href={routers.tipper}
+                                className="inline-flex items-center justify-center whitespace-nowrap rounded-sm bg-blue-600 dark:bg-white px-8 py-2 text-lg font-semibold text-white dark:text-blue-900 shadow-xl hover:bg-blue-700 dark:hover:bg-gray-100"
+                            >
+                                Go To Tipper
+                            </Link>
+                        </motion.div>
+                    </motion.div>
+                </div>
+            </motion.main>
+        );
+    }
 
-          <div className={styles.footerLinksGrid}>
-            {/* Stay Connected */}
-            <div className={styles.footerColumn}>
-              <div className={styles.footerColumnAccent} />
-              <h3 className={styles.footerColumnTitle}>Stay Connected with Cardano2VN</h3>
-              <ul className={styles.footerLinks}>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Support
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Docs
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Follow Us */}
-            <div className={styles.footerColumn}>
-              <div className={styles.footerColumnAccent} />
-              <h3 className={styles.footerColumnTitle}>Follow Us</h3>
-              <ul className={styles.footerLinks}>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    LinkedIn
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Twitter
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div className={styles.footerColumn}>
-              <div className={styles.footerColumnAccent} />
-              <h3 className={styles.footerColumnTitle}>Company</h3>
-              <ul className={styles.footerLinks}>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Roadmap
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Legal */}
-          <div className={styles.footerLegalSection}>
-            <div className={styles.footerColumnAccent} />
-            <h3 className={styles.footerColumnTitle}>Legal</h3>
-            <ul className={styles.footerLegalLinks}>
-              <li>
-                <a href="#" className={styles.footerLink}>
-                  <span className={styles.footerLinkDash} />
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className={styles.footerLink}>
-                  <span className={styles.footerLinkDash} />
-                  Terms of Use
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Bottom bar */}
-          <div className={styles.footerBottomBar}>
-            <div className={styles.footerBrand}>
-              <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13 3.25C11.7071 4.54293 10.9807 6.29652 10.9807 8.125C10.9807 9.95348 11.7071 11.7071 13 13C14.2929 14.2929 16.0465 15.0193 17.875 15.0193C19.7035 15.0193 21.4571 14.2929 22.75 13C22.75 14.9284 22.1782 16.8134 21.1068 18.4168C20.0355 20.0202 18.5127 21.2699 16.7312 22.0078C14.9496 22.7458 12.9892 22.9389 11.0979 22.5627C9.20656 22.1865 7.46927 21.2579 6.10571 19.8943C4.74215 18.5307 3.81355 16.7934 3.43735 14.9021C3.06114 13.0108 3.25422 11.0504 3.99218 9.26884C4.73013 7.48726 5.97982 5.96452 7.58319 4.89317C9.18657 3.82183 11.0716 3.25 13 3.25Z" fill="#8B9DC1" stroke="#8B9DC1" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span className={styles.footerBrandText}>Trust Protocol for Distributed Work</span>
-            </div>
-
-            <div className={styles.footerCopyright}>
-              <div className={styles.footerThemeIcons}>
-                {/* Sun icon */}
-                <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="13" cy="13" r="4.33333" fill="#D1DFFA" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M13 2.16675V4.33341" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M13 21.6667V23.8334" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5.34082 5.34082L6.86832 6.86832" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M19.1317 19.1316L20.6592 20.6591" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2.16666 13H4.33332" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M21.6667 13H23.8333" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M6.86832 19.1316L5.34082 20.6591" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M20.6592 5.34082L19.1317 6.86832" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                {/* Moon icon */}
-                <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M13 3.25C11.7071 4.54293 10.9807 6.29652 10.9807 8.125C10.9807 9.95348 11.7071 11.7071 13 13C14.2929 14.2929 16.0465 15.0193 17.875 15.0193C19.7035 15.0193 21.4571 14.2929 22.75 13C22.75 14.9284 22.1782 16.8134 21.1068 18.4168C20.0355 20.0202 18.5127 21.2699 16.7312 22.0078C14.9496 22.7458 12.9892 22.9389 11.0979 22.5627C9.20656 22.1865 7.46927 21.2579 6.10571 19.8943C4.74215 18.5307 3.81355 16.7934 3.43735 14.9021C3.06114 13.0108 3.25422 11.0504 3.99218 9.26884C4.73013 7.48726 5.97982 5.96452 7.58319 4.89317C9.18657 3.82183 11.0716 3.25 13 3.25Z" fill="#8B9DC1" stroke="#8B9DC1" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <span className={styles.footerSeparator}>|</span>
-              <span className={styles.footerCopyrightText}>© 2025 Cardano2VN. All rights reserved.</span>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </main>
-  );
+    return <Loading />;
 }

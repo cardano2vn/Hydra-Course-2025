@@ -1,275 +1,271 @@
-// import { APP_MNEMONIC, APP_NETWORK_ID, HYDRA_HTTP_URL, HYDRA_HTTP_URL_SUB } from "@/constants/enviroments.constant";
-// import { blockfrostProvider } from "@/providers/blockfrost.provider";
-// import { HydraTxBuilder } from "@/txbuilders/hydra.txbuilder";
-// import { MeshWallet } from "@meshsdk/core"
-// import { HydraProvider } from "@meshsdk/hydra";
+import { APP_MNEMONIC, APP_NETWORK_ID, HYDRA_HTTP_URL, HYDRA_HTTP_URL_SUB } from "~/constants/enviroments";
+import { blockfrostProvider } from "~/providers/cardano";
+import { HydraTxBuilder } from "~/txbuilders/hydra.txbuilder";
+import { MeshWallet } from "@meshsdk/core";
+import { HydraProvider } from "@meshsdk/hydra";
+import sodium from "libsodium-wrappers-sumo";
 
+describe("This is testcase for managing and interacting with the Hydra Head", function () {
+    let meshWallet: MeshWallet;
+    let isCreator: boolean = true;
+    let hydraProvider: HydraProvider;
+    let owner: string;
 
+    beforeEach(async function () {
+        await sodium.ready;
+        meshWallet = new MeshWallet({
+            accountIndex: 0,
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "mnemonic",
+                words: APP_MNEMONIC?.split(" "),
+            },
+        });
 
+        hydraProvider = new HydraProvider({
+            httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
+        });
 
-// describe("This is testcase for managing and interacting with the Hydra Head", function() {
-//     let meshWallet: MeshWallet;
-//     let isCreator: boolean = false;
-//     let hydraProvider: HydraProvider;
-//     let owner: string;
+        owner = "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g";
+    });
 
-//     beforeEach(async function() {
-//         meshWallet = new MeshWallet({
-//             accountIndex: 0,
-//             networkId: APP_NETWORK_ID,
-//             fetcher: blockfrostProvider,
-//             submitter: blockfrostProvider,
-//             key: {
-//                 type: "mnemonic",
-//                 words: APP_MNEMONIC?.split(" ")
-//             }
-//         })
+    jest.setTimeout(60_000_000_000);
 
-//         hydraProvider = new HydraProvider({
-//             httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB
-//         })
+    describe("Common and basic state management in hydra head", function () {
+        it("Init", async function () {
+            // return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
+                await hydraTxBuilder.init();
+            } catch (error) {
+                console.log(error);
+            }
+        });
 
-//         owner = "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g"
-//     })
+        it("Close", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
+                await hydraTxBuilder.close();
+            } catch (error) {
+                console.log(error);
+            }
+        });
 
-//     jest.setTimeout(60_000_000_000)
+        it("Fanout", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
+                await hydraTxBuilder.fanout();
+            } catch (error) {
+                console.log(error);
+            }
+        });
+    });
 
-//     describe("Common and basic state management in hydra head", function() {
-//         it("Init", async function() {
-//             return;
-//             try {
-//                 const hydraTxBuilder = new HydraTxBuilder({
-//                     meshWallet: meshWallet,
-//                     hydraProvider: hydraProvider,
-//                     owner: owner,
-//                     minimumTip: 10_000_000
-//                 }) 
-//                 await hydraTxBuilder.init()
-//             } catch (error) {
-//                 console.log(error)
-//             }
-//         })
+    describe("Implement full fund lifecycle within Hydra Head (commit funds into head and decommit then back to main chain)", function () {
+        it("Commit Empty", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
+                await hydraTxBuilder.initialize();
+                const unsignedTx = await hydraTxBuilder.commit({});
+                const signedTx = await meshWallet.signTx(unsignedTx, true);
+                const txHash = await meshWallet.submitTx(signedTx);
+                await new Promise<void>(function (resolve, reject) {
+                    blockfrostProvider.onTxConfirmed(txHash, () => {
+                        console.log("https://preview.cexplorer.io/tx/" + txHash);
+                        resolve();
+                    });
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        });
 
-//         it("Close", async function() {
-//             return;
-//             try {
-//                 const hydraTxBuilder = new HydraTxBuilder({
-//                     meshWallet: meshWallet,
-//                     hydraProvider: hydraProvider,
-//                     owner: owner,
-//                     minimumTip: 10_000_000
-//                 }) 
-//                 await hydraTxBuilder.close()
-//             } catch (error) {
-//                 console.log(error)
-//             }
-//         })
+        it("Commit UTxO", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
 
-//         it("Fanout", async function() {
-//             return;
-//             try {
-//                 const hydraTxBuilder = new HydraTxBuilder({
-//                     meshWallet: meshWallet,
-//                     hydraProvider: hydraProvider,
-//                     owner: owner,
-//                     minimumTip: 10_000_000
-//                 }) 
-//                 await hydraTxBuilder.fanout()
-//             } catch (error) {
-//                 console.log(error)
-//             }
-//         })
-//     })
+                const utxo = (await meshWallet.getUtxos())[6];
 
-//     describe("Implement full fund lifecycle within Hydra Head (commit funds into head and decommit then back to main chain)", function() {
-//         it("Commit Empty", async function() {
-//             return;
-//             try {
-//                 const hydraTxBuilder = new HydraTxBuilder({
-//                     meshWallet: meshWallet,
-//                     hydraProvider: hydraProvider,
-//                     owner: owner,
-//                     minimumTip: 10_000_000
-//                 })
-//                 await hydraTxBuilder.initialize()
-//                 const unsignedTx = await hydraTxBuilder.commit({})
-//                 const signedTx = await meshWallet.signTx(unsignedTx, true)
-//                 const txHash = await meshWallet.submitTx(signedTx)
-//                 await new Promise<void>(function(resolve, reject) {
-//                 blockfrostProvider.onTxConfirmed(txHash, () => {
-//                         console.log("https://preview.cexplorer.io/tx/"+ txHash)
-//                         resolve()
-//                     })
-//                 })
-//             } catch (error) {
-//                 console.log(error)
-//             }
-//         })
+                console.log(utxo);
+                await hydraTxBuilder.initialize();
 
-//         it("Commit UTxO", async function() {
-//             return;
-//             try {
-//                 const hydraTxBuilder = new HydraTxBuilder({
-//                     meshWallet: meshWallet,
-//                     hydraProvider: hydraProvider,
-//                     owner: owner,
-//                     minimumTip: 10_000_000
-//                 })
-            
-//                 const utxo = (await meshWallet.getUtxos())[0]
+                const unsignedTx = await hydraTxBuilder.commit({
+                    utxo: utxo,
+                });
 
-//                 console.log(utxo)
-//                 await hydraTxBuilder.initialize()
+                const signedTx = await meshWallet.signTx(unsignedTx, true);
+                const txHash = await meshWallet.submitTx(signedTx);
+                await new Promise<void>(function (resolve, reject) {
+                    blockfrostProvider.onTxConfirmed(txHash, () => {
+                        console.log("https://preview.cexplorer.io/tx/" + txHash);
+                        resolve();
+                    });
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        });
 
-//                 const unsignedTx = await hydraTxBuilder.commit({
-//                     utxo: utxo,
-//                 })
+        it("Commit Script UTxO", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
 
-//                 const signedTx = await meshWallet.signTx(unsignedTx, true)
-//                 const txHash = await meshWallet.submitTx(signedTx)
-//                 await new Promise<void>(function(resolve, reject) {
-//                 blockfrostProvider.onTxConfirmed(txHash, () => {
-//                         console.log("https://preview.cexplorer.io/tx/"+ txHash)
-//                         resolve()
-//                     })
-//                 })
-//             } catch (error) {
-//                 console.log(error)
-//             }
-//         })
+                const utxo = (await blockfrostProvider.fetchAddressUTxOs(hydraTxBuilder.spendAddress))[1];
 
-//         it("Commit Script UTxO", async function() {
-//             return;
-//             try {
-//                 const hydraTxBuilder = new HydraTxBuilder({
-//                     meshWallet: meshWallet,
-//                     hydraProvider: hydraProvider,
-//                     owner: owner,
-//                     minimumTip: 10_000_000
-//                 })
+                await hydraTxBuilder.initialize();
+                const unsignedTx = await hydraTxBuilder.commit({
+                    utxo: utxo,
+                    blueprint: true,
+                });
 
-//                 const utxo = (await blockfrostProvider.fetchAddressUTxOs(hydraTxBuilder.spendAddress))[1]
+                const signedTx = await meshWallet.signTx(unsignedTx, true);
+                const txHash = await meshWallet.submitTx(signedTx);
+                await new Promise<void>(function (resolve, reject) {
+                    blockfrostProvider.onTxConfirmed(txHash, () => {
+                        console.log("https://preview.cexplorer.io/tx/" + txHash);
+                        resolve();
+                    });
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        });
 
-//                 await hydraTxBuilder.initialize()
-//                 const unsignedTx = await hydraTxBuilder.commit({
-//                     utxo: utxo,
-//                     blueprint: true,
-//                 })
+        it("Increment Commit UTxO", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
 
-//                 const signedTx = await meshWallet.signTx(unsignedTx, true)
-//                 const txHash = await meshWallet.submitTx(signedTx)
-//                 await new Promise<void>(function(resolve, reject) {
-//                 blockfrostProvider.onTxConfirmed(txHash, () => {
-//                         console.log("https://preview.cexplorer.io/tx/"+ txHash)
-//                         resolve()
-//                     })
-//                 })
-//             } catch (error) {
-//                 console.log(error)
-//             }
-//         })
+                const utxo = (await meshWallet.getUtxos())[1];
 
-//         it("Increment Commit UTxO", async function() {
-//             // return;
-//             try {
-//                 const hydraTxBuilder = new HydraTxBuilder({
-//                     meshWallet: meshWallet,
-//                     hydraProvider: hydraProvider,
-//                     owner: owner,
-//                     minimumTip: 10_000_000
-//                 })
+                await hydraTxBuilder.initialize();
+                const unsignedTx = await hydraTxBuilder.deposit({
+                    utxo: utxo,
+                });
+                return;
+                const signedTx = await meshWallet.signTx(unsignedTx, true);
+                const txHash = await meshWallet.submitTx(signedTx);
+                await new Promise<void>(function (resolve, reject) {
+                    blockfrostProvider.onTxConfirmed(txHash, () => {
+                        console.log("https://preview.cexplorer.io/tx/" + txHash);
+                        resolve();
+                    });
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        });
 
-//                 const utxo = (await meshWallet.getUtxos())[1]
+        it("Decommit Commit UTxO", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
 
-//                 await hydraTxBuilder.initialize()
-//                 const unsignedTx = await hydraTxBuilder.deposit({
-//                     utxo: utxo,
-//                 })
+                const utxo = (await hydraProvider.fetchAddressUTxOs(await meshWallet.getChangeAddress()))[0];
 
-//                 const signedTx = await meshWallet.signTx(unsignedTx, true)
-//                 const txHash = await meshWallet.submitTx(signedTx)
-//                 await new Promise<void>(function(resolve, reject) {
-//                 blockfrostProvider.onTxConfirmed(txHash, () => {
-//                         console.log("https://preview.cexplorer.io/tx/"+ txHash)
-//                         resolve()
-//                     })
-//                 })
-//             } catch (error) {
-//                 console.log(error)
-//             }
-//         })
+                await hydraTxBuilder.initialize();
+                const unsignedTx = await hydraTxBuilder.decommit({
+                    utxo: utxo,
+                });
 
-//         it("Decommit Commit UTxO", async function() {
-//             return;
-//             try {
-//                 const hydraTxBuilder = new HydraTxBuilder({
-//                     meshWallet: meshWallet,
-//                     hydraProvider: hydraProvider,
-//                     owner: owner,
-//                     minimumTip: 10_000_000
-//                 })
+                const signedTx = await meshWallet.signTx(unsignedTx, true);
+                await hydraProvider.publishDecommit({
+                    cborHex: signedTx,
+                    description: "",
+                    type: "Tx ConwayEra",
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        });
+    });
 
-//                 const utxo = (await hydraProvider.fetchAddressUTxOs(await meshWallet.getChangeAddress()))[0]
+    describe("Transaction processing in hydra from basic to advanced.", function () {
+        it("Tip", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
 
-//                 await hydraTxBuilder.initialize()
-//                 const unsignedTx = await hydraTxBuilder.decommit({
-//                     utxo: utxo,
-//                 })
+                await hydraTxBuilder.initialize();
+                const unsignedTx = await hydraTxBuilder.tip({
+                    amount: String(Number(10000000)),
+                });
 
-//                 const signedTx = await meshWallet.signTx(unsignedTx, true)
-//                 await hydraProvider.publishDecommit({
-//                     cborHex: signedTx,
-//                     description: "",
-//                     type: "Tx ConwayEra"
-//                 })
-//             } catch (error) {
-//                 console.log(error)
-//             }
-//         })
-//     })
+                const signedTx = await meshWallet.signTx(unsignedTx, false);
+                const txHash = await hydraTxBuilder.hydraProvider.submitTx(signedTx);
+            } catch (error) {
+                console.log(error);
+            }
+        });
+        it("Claim", async function () {
+            return;
+            try {
+                const hydraTxBuilder = new HydraTxBuilder({
+                    meshWallet: meshWallet,
+                    hydraProvider: hydraProvider,
+                    owner: owner,
+                    minimumTip: 10_000_000,
+                });
 
-//     describe("Transaction processing in hydra from basic to advanced.", function() {
-//             it("Tip", async function() {
-//                 return;
-//                 try {
-//                     const hydraTxBuilder = new HydraTxBuilder({
-//                         meshWallet: meshWallet,
-//                         hydraProvider: hydraProvider,
-//                         owner: owner,
-//                         minimumTip: 10_000_000
-//                     })
-
-//                     await hydraTxBuilder.initialize()
-//                     const unsignedTx = await hydraTxBuilder.tip({
-//                     amount:  String(Number(10000000)),
-//                     })
-
-//                     const signedTx = await meshWallet.signTx(unsignedTx, false)
-//                     const txHash = await hydraTxBuilder.hydraProvider.submitTx(signedTx);
-//                     console.log(txHash)
-//                 } catch (error) {
-//                     console.log(error)
-//                 }
-//             })
-//             it("Claim", async function() {
-//                 return;
-//                 try {
-//                     const hydraTxBuilder = new HydraTxBuilder({
-//                         meshWallet: meshWallet,
-//                         hydraProvider: hydraProvider,
-//                         owner: owner,
-//                         minimumTip: 10_000_000
-//                     })
-            
-//                     await hydraTxBuilder.initialize()
-//                     const unsignedTx = await hydraTxBuilder.claim()
-//                     const signedTx = await meshWallet.signTx(unsignedTx, false)
-//                     const txHash = await hydraTxBuilder.hydraProvider.submitTx(signedTx);
-//                 } catch (error) {
-//                     console.log(error)
-//                 }
-//             })
-//         })
-
-        
-// })
+                await hydraTxBuilder.initialize();
+                const unsignedTx = await hydraTxBuilder.claim();
+                const signedTx = await meshWallet.signTx(unsignedTx, false);
+                const txHash = await hydraTxBuilder.hydraProvider.submitTx(signedTx);
+            } catch (error) {
+                console.log(error);
+            }
+        });
+    });
+});

@@ -1,5 +1,5 @@
-import { HydraAdapter } from "@/adapters/hydra.adapter";
-import { APP_NETWORK } from "@/constants/enviroments.constant";
+import { HydraAdapter } from "~/adapter/hydra.adapter";
+import { APP_NETWORK } from "~/constants/enviroments";
 import { deserializeAddress, mConStr0, mConStr1 } from "@meshsdk/core";
 
 export class HydraTxBuilder extends HydraAdapter {

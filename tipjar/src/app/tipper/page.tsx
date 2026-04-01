@@ -1,195 +1,193 @@
-import styles from './tipper.module.css';
+"use client";
 
-export default function TipperPage() {
-  return (
-    <main className={styles.tipperPage}>
-      <div className={styles.container}>
-        {/* ── Hero Header ── */}
-        <section className={styles.heroSection}>
-          <div className={styles.heroAccentTop} />
-          <div className={styles.heroAccentSecondary} />
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import Tipper from "~/components/tipper";
+import Title from "~/components/title";
+import TipperSkeleton from "~/components/tipper-skeleton";
+import Pagination from "~/components/pagination";
+import { useWallet } from "~/hooks/use-wallet";
+import { getProposals } from "~/services/tipjar.service";
+import { routers } from "~/constants/routers";
+import { images } from "~/public/images";
+import { toast } from "sonner";
 
-          <div className={styles.titleRow}>
-            <div className={styles.titleAccentBar} />
-            <h1 className={styles.pageTitle}>Tippers</h1>
-          </div>
+const TipperPage: React.FC = () => {
+    const [page, setPage] = useState(1);
+    const { address } = useWallet();
 
-          <p className={styles.heroDescription}>
-            Discover creators and communities thriving with Cardano Hydra-powered tipping. Join
-            the decentralized revolution in rewarding talent.
-          </p>
-        </section>
+    const { data, isLoading, error } = useQuery({
+        queryKey: ["proposals", page, address],
+        queryFn: () => getProposals({ limit: 12, page, walletAddress: address || "" }),
+    });
 
-        {/* ── Post Card ── */}
-        <article className={styles.postCard}>
-          <div className={styles.postCardInner}>
-            <div className={styles.postImageWrapper}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                className={styles.postImage}
-                src="https://api.builder.io/api/v1/image/assets/TEMP/600386d05c0ece07eae26a1ea72d2ba65da7eeae?width=1093"
-                alt="[C2VN]: Hydra on Cardano – Complete Step-by-Step DApp Guide"
-              />
+    const noItemsContent = useMemo(
+        () => (
+            <motion.div
+                className="flex flex-col items-center justify-center py-16 text-center"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+                <motion.div
+                    className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                    <Image src={images.logo} alt="Tipjar Logo" />
+                </motion.div>
+                <motion.h3
+                    className="mb-2 text-2xl font-semibold text-gray-900 dark:text-white"
+                    variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                    }}
+                    transition={{ delay: 0.2 }}
+                >
+                    No Tippers Available
+                </motion.h3>
+                <motion.p
+                    className="mb-6 max-w-md text-lg text-gray-600 dark:text-gray-300"
+                    variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                    }}
+                    transition={{ delay: 0.4 }}
+                >
+                    It looks like there are no tippers to display at the moment. Check back later or create your own Tipjar!
+                </motion.p>
+                <motion.div
+                    variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                    }}
+                    transition={{ delay: 0.6 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    <Link
+                        href={routers.dashboard}
+                        className="inline-flex items-center justify-center rounded-sm bg-blue-600 px-8 py-2 text-lg font-semibold text-white shadow-xl hover:bg-blue-700 dark:bg-white dark:text-blue-900 dark:hover:bg-gray-100"
+                    >
+                        Create Tipjar
+                    </Link>
+                </motion.div>
+            </motion.div>
+        ),
+        [],
+    );
+
+    if (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to load tippers");
+        return noItemsContent;
+    }
+
+    return (
+        <motion.main className="relative pt-20" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+            <div className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
+                <motion.div
+                    variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                    }}
+                >
+                    <Title
+                        title="Tippers"
+                        description="Discover creators and communities thriving with Cardano Hydra-powered tipping. Join the decentralized revolution in rewarding talent."
+                    />
+                </motion.div>
+
+                <AnimatePresence mode="wait">
+                    {isLoading ? (
+                        <motion.section
+                            key="loading"
+                            className="grid gap-8 sm:grid-cols-1 md:grid-cols-2"
+                            variants={{
+                                hidden: { opacity: 0 },
+                                visible: { opacity: 1, transition: { duration: 0.4 } },
+                            }}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                        >
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    variants={{
+                                        hidden: { opacity: 0, y: 20 },
+                                        visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                                    }}
+                                    transition={{ delay: i * 0.1 }}
+                                >
+                                    <TipperSkeleton />
+                                </motion.div>
+                            ))}
+                        </motion.section>
+                    ) : !data?.data.length ? (
+                        noItemsContent
+                    ) : (
+                        <motion.section
+                            key="data"
+                            className="grid gap-8 sm:grid-cols-1 md:grid-cols-2"
+                            variants={{
+                                hidden: { opacity: 0 },
+                                visible: { opacity: 1, transition: { duration: 0.4 } },
+                            }}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                        >
+                            {data.data.map((result, index) => (
+                                <motion.div
+                                    key={result.walletAddress || index}
+                                    className="rounded-xl border border-blue-100 bg-white shadow-lg dark:border-blue-900/30 dark:bg-slate-900/80"
+                                    variants={{
+                                        hidden: { opacity: 0, y: 20 },
+                                        visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                                    }}
+                                    transition={{ delay: index * 0.1 }}
+                                    whileHover={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                                >
+                                    <Tipper
+                                        image={result.image || images.logo}
+                                        title={result.title || "Untitled Proposal"}
+                                        author={result.author || "Unknown Author"}
+                                        slug={result.walletAddress || ""}
+                                        datetime={new Date(Number(result.datetime || Date.now())).toLocaleString("en-GB", {
+                                            day: "2-digit",
+                                            month: "2-digit",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                        participants={2}
+                                    />
+                                </motion.div>
+                            ))}
+                        </motion.section>
+                    )}
+                </AnimatePresence>
+
+                {(data?.totalPages ?? 0) > 1 && (
+                    <motion.div
+                        className="mt-12 flex justify-center"
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                        }}
+                        initial="hidden"
+                        animate="visible"
+                        transition={{ delay: 0.2 }}
+                    >
+                        <Pagination currentPage={page} totalPages={data?.totalPages ?? 0} setCurrentPage={setPage} />
+                    </motion.div>
+                )}
             </div>
+        </motion.main>
+    );
+};
 
-            <div className={styles.postBody}>
-              <h2 className={styles.postTitle}>
-                [C2VN]: Hydra on Cardano – Complete Step-by-Step DApp Guide
-              </h2>
-
-              <div className={styles.postMeta}>
-                <div className={styles.postMetaLeft}>
-                  <span className={styles.postDate}>03/12/2025, 09:36</span>
-                  <span className={styles.postAuthor}>by cardano2vn</span>
-                  <span className={styles.postParticipants}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M7.99998 2.66675C7.29274 2.66675 6.61446 2.9477 6.11436 3.4478C5.61426 3.94789 5.33331 4.62617 5.33331 5.33341C5.33331 6.04066 5.61426 6.71894 6.11436 7.21903C6.61446 7.71913 7.29274 8.00008 7.99998 8.00008C8.70722 8.00008 9.3855 7.71913 9.8856 7.21903C10.3857 6.71894 10.6666 6.04066 10.6666 5.33341C10.6666 4.62617 10.3857 3.94789 9.8856 3.4478C9.3855 2.9477 8.70722 2.66675 7.99998 2.66675ZM7.99998 9.33341C5.42665 9.33341 3.33331 10.5267 3.33331 12.0001V13.3334H12.6666V12.0001C12.6666 10.5267 10.5733 9.33341 7.99998 9.33341Z" stroke="#99A1AF" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    2 participants
-                  </span>
-                </div>
-
-                <a href="#" className={styles.readMoreLink}>
-                  Read More
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M6 3.33325L10.6667 7.99992L6 12.6666" stroke="#51A2FF" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      {/* ── Footer ── */}
-      <div className={styles.footerWrapper}>
-        <footer className={styles.footer}>
-          <div className={styles.footerDivider} />
-
-          <div className={styles.footerLinksGrid}>
-            {/* Stay Connected */}
-            <div className={styles.footerColumn}>
-              <div className={styles.footerColumnAccent} />
-              <h3 className={styles.footerColumnTitle}>Stay Connected with Cardano2VN</h3>
-              <ul className={styles.footerLinks}>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Support
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Docs
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Follow Us */}
-            <div className={styles.footerColumn}>
-              <div className={styles.footerColumnAccent} />
-              <h3 className={styles.footerColumnTitle}>Follow Us</h3>
-              <ul className={styles.footerLinks}>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    LinkedIn
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Twitter
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div className={styles.footerColumn}>
-              <div className={styles.footerColumnAccent} />
-              <h3 className={styles.footerColumnTitle}>Company</h3>
-              <ul className={styles.footerLinks}>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className={styles.footerLink}>
-                    <span className={styles.footerLinkDash} />
-                    Roadmap
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Legal */}
-          <div className={styles.footerLegalSection}>
-            <div className={styles.footerLegalAccent} />
-            <h3 className={styles.footerLegalTitle}>Legal</h3>
-            <ul className={styles.footerLinks}>
-              <li>
-                <a href="#" className={styles.footerLink}>
-                  <span className={styles.footerLinkDash} />
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className={styles.footerLink}>
-                  <span className={styles.footerLinkDash} />
-                  Terms of Use
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className={styles.footerBottomBar}>
-            <div className={styles.footerBrand}>
-              <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Cardano2VN logo">
-                <circle cx="13" cy="13" r="12" stroke="#2B7FFF" strokeWidth="2"/>
-                <circle cx="13" cy="13" r="6" fill="#2B7FFF" fillOpacity="0.3"/>
-                <circle cx="13" cy="13" r="3" fill="#2B7FFF"/>
-              </svg>
-              <span className={styles.footerBrandText}>Trust Protocol for Distributed Work</span>
-            </div>
-
-            <div className={styles.footerCopyright}>
-              <div className={styles.footerThemeIcons}>
-                {/* Sun icon */}
-                <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M13 17.3334C15.3932 17.3334 17.3333 15.3933 17.3333 13.0001C17.3333 10.6068 15.3932 8.66675 13 8.66675C10.6067 8.66675 8.66663 10.6068 8.66663 13.0001C8.66663 15.3933 10.6067 17.3334 13 17.3334Z" fill="#D1DFFA" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M13 2.16675V4.33341" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M13 21.6667V23.8334" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5.34082 5.34082L6.86832 6.86832" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M19.1317 19.1316L20.6592 20.6591" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2.16663 13H4.33329" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M21.6666 13H23.8333" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M6.86832 19.1316L5.34082 20.6591" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M20.6592 5.34082L19.1317 6.86832" stroke="#D1DFFA" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                {/* Moon icon */}
-                <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M13 3.25C11.7071 4.54293 10.9807 6.29652 10.9807 8.125C10.9807 9.95348 11.7071 11.7071 13 13C14.2929 14.2929 16.0465 15.0193 17.875 15.0193C19.7035 15.0193 21.4571 14.2929 22.75 13C22.75 14.9284 22.1782 16.8134 21.1068 18.4168C20.0355 20.0202 18.5127 21.2699 16.7312 22.0078C14.9496 22.7458 12.9892 22.9389 11.0979 22.5627C9.20656 22.1865 7.46927 21.2579 6.10571 19.8943C4.74215 18.5307 3.81355 16.7934 3.43735 14.9021C3.06114 13.0108 3.25422 11.0504 3.99218 9.26884C4.73013 7.48726 5.97982 5.96452 7.58319 4.89317C9.18657 3.82183 11.0716 3.25 13 3.25Z" fill="#8B9DC1" stroke="#8B9DC1" strokeWidth="2.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <span className={styles.footerSeparator}>|</span>
-              <span className={styles.footerCopyrightText}>© 2025 Cardano2VN. All rights reserved.</span>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </main>
-  );
-}
+export default TipperPage;

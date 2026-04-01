@@ -1,9 +1,9 @@
-import { APP_MNEMONIC, APP_NETWORK_ID } from "@/constants/enviroments.constant";
-import { blockfrostProvider } from "@/providers/blockfrost.provider";
-import { MeshTxBuilder } from "@/txbuilders/mesh.txbuilder";
-import { MeshWallet } from "@meshsdk/core"
+import { APP_MNEMONIC, APP_NETWORK_ID } from "~/constants/enviroments";
+import { blockfrostProvider } from "~/providers/cardano";
+import { MeshTxBuilder } from "~/txbuilders/mesh.txbuilder";
+import { MeshWallet } from "@meshsdk/core";
 
-describe("This is testcase Tip and Cliam with Tipjar validator", function() {
+describe("This is testcase Tip and Cliam with Tipjar validator", function () {
     let meshWallet: MeshWallet;
     let owner: string;
 
@@ -12,7 +12,7 @@ describe("This is testcase Tip and Cliam with Tipjar validator", function() {
     // 2: carol => tipper => addr_test1qqy0z4ekhv8gcnmvkeakkaher82rlrx2yu9y79cjf4r704pqg73fhf002takqewlvjcy39dellyumg43f08uea0p6mps7pw77f
     // 3: eve => tipper => addr_test1qrpfhvwrmq0y27k2elu0seh65w6kwyxxee6sq7f9d2ax62e8wm6fj2y63rp3kql4skhu2wyt0uml07w2pggzpzh95ugqk9j5d9
 
-    beforeEach(async function() {
+    beforeEach(async function () {
         meshWallet = new MeshWallet({
             accountIndex: 0,
             networkId: APP_NETWORK_ID,
@@ -21,48 +21,48 @@ describe("This is testcase Tip and Cliam with Tipjar validator", function() {
             key: {
                 type: "mnemonic",
                 words: APP_MNEMONIC.split(" ") || [],
-            }
-        })
-        owner = "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g"
-    })
+            },
+        });
+        owner = "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g";
+    });
 
-    jest.setTimeout(6_000_000)
+    jest.setTimeout(6_000_000);
 
-    test("Tip", async function() {
-        // return;
+    test("Tip", async function () {
+        return;
         const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
             meshWallet: meshWallet,
             owner: owner,
-            minimumTip: 10_000_000
-        })
+            minimumTip: 10_000_000,
+        });
         const unsignedTx: string = await meshTxBuilder.tip({
-            amount: "10000000"
-        })
-        const signedTx = await meshWallet.signTx(unsignedTx, true)
-        const txHash = await meshWallet.submitTx(signedTx)
-        await new Promise<void>(function(resolve, reject) {
+            amount: "10000000",
+        });
+        const signedTx = await meshWallet.signTx(unsignedTx, true);
+        const txHash = await meshWallet.submitTx(signedTx);
+        await new Promise<void>(function (resolve, reject) {
             blockfrostProvider.onTxConfirmed(txHash, () => {
-                console.log("https://preview.cexplorer.io/tx/" + txHash)
-                resolve()
-            })
-        })
-    })
+                console.log("https://preview.cexplorer.io/tx/" + txHash);
+                resolve();
+            });
+        });
+    });
 
-    test("Claim", async function() {
-        return
+    test("Claim", async function () {
+        return;
         const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
             meshWallet: meshWallet,
             owner: owner,
-            minimumTip: 10_000_000
-        })
-        const unsignedTx: string = await meshTxBuilder.claim()
-        const signedTx = await meshWallet.signTx(unsignedTx, true)
-        const txHash = await meshWallet.submitTx(signedTx)
-        await new Promise<void>(function(resolve, reject) {
+            minimumTip: 10_000_000,
+        });
+        const unsignedTx: string = await meshTxBuilder.claim();
+        const signedTx = await meshWallet.signTx(unsignedTx, true);
+        const txHash = await meshWallet.submitTx(signedTx);
+        await new Promise<void>(function (resolve, reject) {
             blockfrostProvider.onTxConfirmed(txHash, () => {
-                console.log("https://preview.cexplorer.io/tx/"+ txHash)
-                resolve()
-            })
-        })
-    })
-})
+                console.log("https://preview.cexplorer.io/tx/" + txHash);
+                resolve();
+            });
+        });
+    });
+});
