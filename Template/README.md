@@ -95,8 +95,8 @@ Follow these steps to set up HydraTipJar locally or deploy it for production. Pr
 1. **Clone the Repository**
 
     ```bash
-    git clone https://github.com/independenceee/tipjar.git
-    cd tipjar
+    git clone https://github.com/cardano2vn/Hydra-Course-2025.git
+    cd Hydra-Course-2025/Template
     ```
 
 2. **Install Dependencies**
