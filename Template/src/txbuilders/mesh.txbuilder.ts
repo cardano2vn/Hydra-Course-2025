@@ -11,6 +11,19 @@ export class MeshTxBuilder extends MeshAdapter {
         const unsignedTx = this.meshTxBuilder;
 
         if (utxo) {
+            const datumList = this.convertDatum(utxo.output.plutusData as string);
+            const existing = datumList.find((datum) => datum.address === walletAddress);
+
+            if (existing) {
+                existing.amount += Number(amount);
+            } else {
+                datumList.push({
+                    address: walletAddress,
+                    amount: Number(amount),
+                });
+            }
+
+            console.log(datumList);
             unsignedTx
                 .spendingPlutusScriptV3()
                 .txIn(utxo.input.txHash, utxo.input.outputIndex)
@@ -30,14 +43,17 @@ export class MeshTxBuilder extends MeshAdapter {
                             }, Number(amount)),
                         ),
                     },
-                ]);
+                ])
+                .txOutInlineDatumValue(mConStr0(datumList.map((datum) => mConStr0([datum.address, datum.amount]))));
         } else {
-            unsignedTx.txOut(this.spendAddress, [
-                {
-                    unit: "lovelace",
-                    quantity: amount,
-                },
-            ]);
+            unsignedTx
+                .txOut(this.spendAddress, [
+                    {
+                        unit: "lovelace",
+                        quantity: amount,
+                    },
+                ])
+                .txOutInlineDatumValue(mConStr0([mConStr0([walletAddress, Number(amount)])]));
         }
 
         unsignedTx
@@ -52,6 +68,7 @@ export class MeshTxBuilder extends MeshAdapter {
     claim = async (): Promise<string> => {
         const { utxos, collateral, walletAddress } = await this.getWalletForTx();
         const utxo = (await this.fetcher.fetchAddressUTxOs(this.spendAddress))[0];
+        console.log(utxo);
 
         const unsignedTx = this.meshTxBuilder
             .spendingPlutusScriptV3()

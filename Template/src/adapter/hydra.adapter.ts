@@ -166,6 +166,7 @@ export class HydraAdapter {
             return await this.hydraInstance.commitEmpty();
         }
 
+
         const { walletAddress, utxos, collateral } = await this.getWalletForTx();
 
         const unsignedTx = this.meshTxBuilder

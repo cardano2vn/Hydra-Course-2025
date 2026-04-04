@@ -5,24 +5,12 @@ import { USD } from "./icons";
 import { memo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { getRecents } from "~/services/hydra.service";
 import Pagination from "./pagination";
 import Image from "next/image";
 import { images } from "~/public/images*";
 import { shortenString } from "~/lib/utils";
 
 const Recent = function ({ walletAddress }: { walletAddress: string }) {
-    const [page, setPage] = useState(1);
-    const { data, isLoading, error } = useQuery({
-        queryKey: ["recents", walletAddress, page],
-        queryFn: () =>
-            getRecents({
-                walletAddress: walletAddress!,
-                limit: 4,
-                page: page,
-            }),
-    });
-
     return (
         <motion.div
             className=" rounded-2xl h-full border border-blue-200/50 bg-white shadow-lg dark:border-blue-900/30 dark:bg-slate-900"
@@ -50,18 +38,12 @@ const Recent = function ({ walletAddress }: { walletAddress: string }) {
 
                 <div className="mt-4 flex-1 overflow-auto">
                     <AnimatePresence mode="wait">
-                        {error || !data?.data || data.totalItem === 0 ? (
+                        {true ? (
                             <NotFound key="not-found" />
-                        ) : isLoading ? (
+                        ) : true ? (
                             <Loading key="loading" />
                         ) : (
-                            <Result
-                                key="result"
-                                data={data.data.filter((item) => item !== undefined) as RecentType[]}
-                                page={page}
-                                setPage={setPage}
-                                totalPages={data.totalPages}
-                            />
+                            <Result key="result" data={null!} page={0} setPage={null!} totalPages={0} />
                         )}
                     </AnimatePresence>
                 </div>

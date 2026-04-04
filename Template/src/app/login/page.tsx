@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { images } from "~/public/images";
 import { routers } from "~/constants/routers";
-import { useSession } from "next-auth/react";
 import { wallets } from "~/constants/wallets";
 import { redirect, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -13,6 +12,7 @@ import { networks } from "~/constants/networks";
 import Network from "~/components/network";
 import Wallet from "~/components/wallet";
 import { WalletType } from "~/types";
+import { useSession } from "next-auth/react";
 export const dynamic = "force-dynamic";
 
 export default function SignIn() {
@@ -31,15 +31,15 @@ export default function SignIn() {
         }
     }, [network]);
 
-    const router = useRouter();
+    const router = useRouter()
 
-    const { data: session, status } = useSession();
+    const { data: session, status} = useSession()
 
     useEffect(() => {
-        if (status === "authenticated") {
-            redirect("/dashboard");
+        if(status === "authenticated") {
+            redirect(routers.dashboard)
         }
-    }, [status, router]);
+    }, [status, router])
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
@@ -96,7 +96,7 @@ export default function SignIn() {
                             </section>
                             <section className="overflow-x-hidden overflow-y-auto pr-[20px] mr-[-20px] h-[230px] flex flex-col gap-2">
                                 {wallets.map((wallet: WalletType, index: number) => (
-                                    <Wallet key={index} wallet={wallet} session={session} />
+                                    <Wallet key={index} wallet={wallet} session={null} />
                                 ))}
                             </section>
                         </div>

@@ -28,14 +28,14 @@ describe("This is testcase for managing and interacting with the Hydra Head", fu
             httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
         });
 
-        owner = "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g";
+        owner = "addr_test1qrr879mjnxd3gjqjdgjxkwzfcnvcgsve927scqk5fc3gfs2hs03pn7uhujentyhzq3ays72u4xtfrlahyjalujhxufsqdeezc0";
     });
 
     jest.setTimeout(60_000_000_000);
 
     describe("Common and basic state management in hydra head", function () {
         it("Init", async function () {
-            // return;
+            return;
             try {
                 const hydraTxBuilder = new HydraTxBuilder({
                     meshWallet: meshWallet,

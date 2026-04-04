@@ -137,43 +137,43 @@ export const useWallet = create<WalletStoreType>((set, get) => ({
         }
 
         const { wallet, address } = get();
-        
+
         if (wallet && address === session.user.address) {
             return;
         }
 
         try {
             const walletName = session.user.wallet;
-            
+
             if (walletName) {
                 let browserWallet: BrowserWallet | null = null;
                 let retryCount = 0;
                 const maxRetries = 3;
-                
+
                 while (!browserWallet && retryCount < maxRetries) {
                     try {
                         browserWallet = await BrowserWallet.enable(walletName.toLowerCase());
                     } catch (enableError) {
                         retryCount++;
-                        
+
                         if (retryCount < maxRetries) {
-                            await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
+                            await new Promise((resolve) => setTimeout(resolve, retryCount * 1000));
                         } else {
                             throw enableError;
                         }
                     }
                 }
-                
+
                 if (browserWallet) {
                     const network = await browserWallet.getNetworkId();
-                    
+
                     if (network === APP_NETWORK_ID) {
                         const address = await browserWallet.getChangeAddress();
                         const stakeList = await browserWallet.getRewardAddresses();
                         const stakeAddress = stakeList[0];
 
-                        const walletConfig = wallets.find(w => w.name.toLowerCase() === walletName.toLowerCase());
-                        
+                        const walletConfig = wallets.find((w) => w.name.toLowerCase() === walletName.toLowerCase());
+
                         set({
                             browserWallet: browserWallet,
                             wallet: {
@@ -188,8 +188,7 @@ export const useWallet = create<WalletStoreType>((set, get) => ({
                     }
                 }
             }
-        } catch (error) {
-        }
+        } catch (error) {}
     },
 }));
 
@@ -202,7 +201,7 @@ export const useWalletSync = () => {
             const timeoutId = setTimeout(() => {
                 syncWithSession(session);
             }, 1000);
-            
+
             return () => clearTimeout(timeoutId);
         } else {
             syncWithSession(session);

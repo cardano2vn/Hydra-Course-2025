@@ -7,7 +7,6 @@ import { IoIosHelpCircleOutline } from "react-icons/io";
 import { MdOutlineFeedback } from "react-icons/md";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { useWallet } from "~/hooks/use-wallet";
 import { useEffect, useState } from "react";
 import CountUp from "react-countup";
 import { APP_NETWORK } from "~/constants/enviroments";
@@ -15,22 +14,24 @@ import Copy from "~/components/copy";
 import { Separator } from "~/components/ui/separator";
 import { DECIMAL_PLACE } from "~/constants/common";
 import { Button } from "~/components/ui/button";
+import { images } from "~/public/images*";
+import { useWallet } from "~/hooks/use-wallet";
 
 export default function Account() {
-    const { wallet, address, browserWallet, stakeAddress } = useWallet();
     const [balance, setBalance] = useState<number>(0);
+    const { wallet, browserWallet, address, stakeAddress } = useWallet();
 
     useEffect(() => {
-        (async () => {
+        (async function () {
             if (browserWallet) {
                 try {
-                    const balance = await browserWallet.getLovelace();
-                    setBalance(Number(balance));
+                    const balance = await browserWallet.getBalance();
+                    setBalance(Number(balance[0].quantity));
                 } catch (_) {
                     setTimeout(async () => {
                         try {
-                            const retryBalance = await browserWallet.getLovelace();
-                            setBalance(Number(retryBalance));
+                            const balance = await browserWallet.getBalance();
+                            setBalance(Number(balance[0].quantity));
                         } catch (_) {}
                     }, 2000);
                 }
@@ -38,7 +39,7 @@ export default function Account() {
                 setBalance(0);
             }
         })();
-    }, [browserWallet, wallet]);
+    }, [wallet, browserWallet]);
 
     return (
         <Popover>
@@ -53,13 +54,11 @@ export default function Account() {
                         src={wallet?.icon || ""}
                         width={32}
                         height={32}
-                        alt={`${wallet?.icon} icon`}
+                        alt={`Wallet Icon`}
                     />
                 </div>
                 <div className="">
-                    <h2 className="text-[13px] leading-4 text-gray-800 dark:text-white">
-                        {address?.slice(0, 12)}...{address?.slice(-4)}
-                    </h2>
+                    <h2 className="text-[13px] leading-4 text-gray-800 dark:text-white">{shortenString(address as string, 10)}</h2>
                     <p className={"text-left text-[14px] leading-4 text-gray-700 dark:text-gray-300"}>
                         <CountUp start={0} end={Number((balance / DECIMAL_PLACE).toFixed(6))} decimals={6} /> ₳
                     </p>
@@ -71,16 +70,10 @@ export default function Account() {
             >
                 <div className="flex items-center gap-3">
                     <div className={"h-10 w-10"}>
-                        <Image
-                            className={"h-full w-full object-cover"}
-                            src={wallet?.icon || ""}
-                            alt={`${wallet?.name} icon`}
-                            width={32}
-                            height={32}
-                        />
+                        <Image className={"h-full w-full object-cover"} src={wallet?.icon as string} alt={`Wallet Icon`} width={32} height={32} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white capitalize">{wallet?.name}</h2>
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white capitalize">Eternl</h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400 capitalize"> {APP_NETWORK}</p>
                     </div>
                 </div>
@@ -89,19 +82,19 @@ export default function Account() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <p className="text-sm text-gray-500 dark:text-gray-400">Stake:</p>
-                            <span className="text-sm text-gray-900 dark:text-gray-100">{shortenString(stakeAddress || "", 11)}</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{shortenString(address as string, 10)}</span>
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                            <Copy className="h-4 w-4" content={stakeAddress || ""} />
+                            <Copy className="h-4 w-4" content={address as string} />
                         </Button>
                     </div>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <p className="text-sm text-gray-500 dark:text-gray-400">Change:</p>
-                            <span className="text-sm text-gray-900 dark:text-gray-100">{shortenString(address || "", 10)}</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{shortenString(stakeAddress as string, 10)}</span>
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                            <Copy className="h-4 w-4" content={stakeAddress || ""} />
+                            <Copy className="h-4 w-4" content={stakeAddress as string} />
                         </Button>
                     </div>
                 </div>

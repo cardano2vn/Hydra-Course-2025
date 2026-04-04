@@ -17,7 +17,7 @@ export class BlockfrostFetcher {
             const projectId = args[0] as string;
             const network = projectId.slice(0, 7);
             this._axiosInstance = axios.create({
-                baseURL: `https://cardano-${network}.blockfrost.io/api/v${args[1] ?? 0}`,
+                baseURL: `https://cardano-preview.blockfrost.io/api/v${args[1] ?? 0}`,
                 headers: { project_id: projectId },
             });
             this._network = network as BlockfrostSupportedNetworks;

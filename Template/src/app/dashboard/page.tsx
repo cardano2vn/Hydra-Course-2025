@@ -1,15 +1,9 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
-import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
 import { motion } from "framer-motion";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import Link from "next/link";
-import Image from "next/image";
 import { z } from "zod";
 import Tipper from "~/components/tipper";
 import Status from "~/components/status";
@@ -18,13 +12,7 @@ import Info from "~/components/info";
 import Recent from "~/components/recent";
 import Withdraw from "~/components/withdraw";
 import Loading from "~/components/loading";
-import { useWallet } from "~/hooks/use-wallet";
 import { images } from "~/public/images";
-import { routers } from "~/constants/routers";
-import { DECIMAL_PLACE, HeadStatus } from "~/constants/common";
-import { createProposal, getProposal, getProposals } from "~/services/tipjar.service";
-import { commit, getStatus } from "~/services/hydra.service";
-import { getUTxOOnlyLovelace, submitTx } from "~/services/mesh.service";
 import { CreatorSchema } from "~/lib/schema";
 import {
     AlertDialog,
@@ -37,37 +25,43 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
-import { isNil } from "lodash";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useWallet } from "~/hooks/use-wallet";
+import { commit, getStatus, getUTxOsFromHydra } from "~/services/hydra.service";
+import { getUTxOsCommit, submitTx } from "~/services/mesh.service";
+import { DECIMAL_PLACE } from "~/constants/common";
+import { toast } from "sonner";
+import { blockfrostProvider } from "~/providers/cardano";
+import { createProposal } from "~/services/tipjar.service";
 
 type Form = z.infer<typeof CreatorSchema>;
 
 export default function Dashboard() {
     const { status: sessionStatus } = useSession();
-    const queryClient = useQueryClient();
-    const { address, signTx } = useWallet();
+    const { address, signTx, getUtxos } = useWallet();
     const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient();
 
-    const { data: proposalData, isLoading: isProposalLoading } = useQuery({
-        queryKey: ["proposal", address],
-        queryFn: () => getProposal({ walletAddress: address as string }),
-        enabled: !!address && sessionStatus === "authenticated",
+    if (sessionStatus === "unauthenticated") {
+        redirect("/login");
+    }
+    const { data: utxosFromHydra, isLoading: isLoadingUtxosFromHydra } = useQuery({
+        queryKey: ["fetch-utxo-hydra", address],
+        queryFn: () => getUTxOsFromHydra(address as string),
+        enabled: !!address,
     });
 
-    const { data: proposals } = useQuery({
-        queryKey: ["proposals", address],
-        queryFn: () => getProposals({ limit: 12, page: 1, walletAddress: address || "" }),
+    const { data: utxosCommit, isLoading: isLoadingUtxosCommit } = useQuery({
+        queryKey: ["fetch-utxo-commit", address],
+        queryFn: () => getUTxOsCommit({ walletAddress: address as string }),
+        enabled: !!address,
     });
 
-    const { data: statusData, isLoading: isStatusLoading } = useQuery({
-        queryKey: ["status", address],
-        queryFn: () => getStatus({ walletAddress: address as string, isCreator: true }),
-        enabled: !!address && sessionStatus === "authenticated",
-    });
-
-    const { data: utxoData, isLoading: isUtxoLoading } = useQuery({
-        queryKey: ["utxos", address],
-        queryFn: () => getUTxOOnlyLovelace({ walletAddress: address as string, quantity: DECIMAL_PLACE * 10 }),
-        enabled: !!address && sessionStatus === "authenticated",
+    const { data: headStatus, isLoading: isLoadingHeadStatus } = useQuery({
+        queryKey: ["fetch-status-hydra"],
+        queryFn: () => getStatus(),
     });
 
     const {
@@ -97,50 +91,44 @@ export default function Dashboard() {
             if (!address || !data.adaCommit) return;
             try {
                 setLoading(true);
-
-                const unsignedTx = await commit({
-                    walletAddress: address,
-                    input: {
-                        txHash: data.adaCommit.txHash,
-                        outputIndex: data.adaCommit.outputIndex,
-                    },
+                const utxo = (await getUtxos()).find(
+                    (utxo) => utxo.input.txHash === data.adaCommit.txHash && utxo.input.outputIndex === data.adaCommit.outputIndex,
+                );
+                if (!utxo) {
+                    toast.error("Selected UTxO not found in your wallet. Please select a valid UTxO.");
+                    return;
+                }
+                const unsignTx = await commit({
+                    address: address as string,
+                    utxo: utxo,
                     isCreator: true,
-                    status: statusData as string,
                 });
-
-                const signedTx = await signTx(unsignedTx as string);
-                await submitTx({ signedTx });
+                const signedTx = await signTx(unsignTx);
+                await submitTx({ signedTx: signedTx });
 
                 await createProposal({
-                    walletAddress: address,
-                    assetName: data.author,
-                    metadata: {
-                        title: data.title,
-                        description: data.description,
-                        author: data.author,
-                        image: (data?.image as string) || "",
-                        startDate: data.startDate,
-                        endDate: data.endDate,
-                        participants: data.participants,
-                    },
+                    title: data.title,
+                    description: data.description,
+                    author: data.author,
+                    image: data.image as string,
+                    address: address as string,
+                    participants: data.participants,
                 });
 
-                toast.success("Proposal created successfully!");
-                queryClient.invalidateQueries({ queryKey: ["status", "proposal", "proposals"] });
+                toast.success("Your proposal has been successfully registered!");
+
                 await Promise.allSettled([
-                    queryClient.invalidateQueries({ queryKey: ["balance-tip"] }),
-                    queryClient.invalidateQueries({ queryKey: ["balance-commit"] }),
-                    queryClient.invalidateQueries({ queryKey: ["status"] }),
-                    queryClient.invalidateQueries({ queryKey: ["recents"] }),
-                    queryClient.invalidateQueries({ queryKey: ["proposal"] }),
+                    queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] }),
+                    queryClient.invalidateQueries({ queryKey: ["fetch-utxo-commit", address] }),
+                    queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] }),
                 ]);
             } catch (error) {
-                toast.error("Proposal created feild !");
+                toast.error("An error occurred while submitting your proposal. Please try again.");
             } finally {
                 setLoading(false);
             }
         },
-        [address, signTx, queryClient, statusData],
+        [address, signTx, headStatus],
     );
 
     const formInputs = useMemo(
@@ -156,15 +144,7 @@ export default function Dashboard() {
         [],
     );
 
-    if (sessionStatus === "unauthenticated") {
-        redirect("/login");
-    }
-
-    // if (sessionStatus === "loading" || isProposalLoading || isStatusLoading || isUtxoLoading || loading) {
-    //     return <Loading />;
-    // }
-
-    if (isNil(proposalData?.data) && (statusData === HeadStatus.IDLE || statusData === HeadStatus.INITIALIZING)) {
+    if (headStatus === "IDLE" || utxosFromHydra?.length === 0) {
         return (
             <motion.aside
                 className="container mx-auto py-8 px-4 pt-24"
@@ -188,8 +168,8 @@ export default function Dashboard() {
                     >
                         <Status
                             title="There is now a head available for you to access and below is the current state of your head"
-                            loading={isStatusLoading}
-                            data={statusData as string}
+                            loading={isLoadingHeadStatus}
+                            data={headStatus as string}
                         />
                     </motion.section>
                     <motion.section
@@ -210,7 +190,7 @@ export default function Dashboard() {
                                     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                                 }}
                             >
-                                <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                                <form className="space-y-6" onSubmit={null!}>
                                     {formInputs.map(({ id, label, type, placeholder, rows, min, max }, index) => (
                                         <motion.div
                                             key={id}
@@ -282,16 +262,18 @@ export default function Dashboard() {
                                                 <select
                                                     id="adaCommit"
                                                     className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 px-4 text-base text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors disabled:opacity-50"
-                                                    disabled={isSubmitting || !utxoData?.length}
+                                                    disabled={isSubmitting}
                                                     value={field.value ? JSON.stringify(field.value) : ""}
                                                     onChange={(e) => field.onChange(e.target.value ? JSON.parse(e.target.value) : undefined)}
                                                 >
                                                     <option value="">-- Select amount --</option>
-                                                    {utxoData?.map((utxo) => (
-                                                        <option key={`${utxo.txHash}-${utxo.outputIndex}`} value={JSON.stringify(utxo)}>
-                                                            {Number(utxo.amount) / DECIMAL_PLACE} ADA
-                                                        </option>
-                                                    ))}
+                                                    {utxosCommit?.map((utxo) => {
+                                                        return (
+                                                            <option key={`${utxo.txHash}-${utxo.outputIndex}`} value={JSON.stringify(utxo)}>
+                                                                {Number(utxo.amount) / DECIMAL_PLACE}
+                                                            </option>
+                                                        );
+                                                    })}
                                                 </select>
                                             )}
                                         />
@@ -301,9 +283,7 @@ export default function Dashboard() {
                                                 initial={{ x: -10, opacity: 0 }}
                                                 animate={{ x: 0, opacity: 1 }}
                                                 transition={{ duration: 0.2, type: "spring", stiffness: 100 }}
-                                            >
-                                                {errors.adaCommit.message}
-                                            </motion.p>
+                                            ></motion.p>
                                         )}
                                     </motion.div>
                                     <motion.div
@@ -375,7 +355,7 @@ export default function Dashboard() {
         );
     }
 
-    if (proposalData?.data?.walletAddress === address) {
+    if (Number(utxosFromHydra?.length) > 0) {
         return (
             <motion.aside
                 className="container mx-auto py-8 px-4 pt-24"
@@ -399,8 +379,8 @@ export default function Dashboard() {
                     >
                         <Status
                             title="There is now a head available for you to access and below is the current state of your head"
-                            loading={isStatusLoading}
-                            data={statusData as string}
+                            loading={isLoadingHeadStatus}
+                            data={headStatus as string}
                         />
                     </motion.section>
                     <motion.section
@@ -420,12 +400,7 @@ export default function Dashboard() {
                                     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                                 }}
                             >
-                                <Balance
-                                    status={statusData as string}
-                                    proposal={proposalData?.data}
-                                    walletAddress={address as string}
-                                    assetName={proposalData?.data?.author as string}
-                                />
+                                <Balance status={headStatus as string} headUtxos={null!} walletUtxos={null!} />
                             </motion.div>
                             <motion.div
                                 variants={{
@@ -433,7 +408,7 @@ export default function Dashboard() {
                                     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                                 }}
                             >
-                                <Info link={`https://tipjar.cardano2vn.io/tipper/${address}`} />
+                                <Info link={``} />
                             </motion.div>
                         </div>
                         <motion.div
@@ -443,7 +418,7 @@ export default function Dashboard() {
                                 visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                             }}
                         >
-                            <Recent walletAddress={address as string} />
+                            <Recent walletAddress={null!} />
                         </motion.div>
                     </motion.section>
                     <motion.div
@@ -453,84 +428,10 @@ export default function Dashboard() {
                             visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                         }}
                     >
-                        <Withdraw walletAddress={address as string} />
+                        <Withdraw walletAddress={null!} />
                     </motion.div>
                 </div>
             </motion.aside>
-        );
-    }
-
-    if (
-        (statusData === HeadStatus.OPEN ||
-            statusData === HeadStatus.CLOSED ||
-            statusData === HeadStatus.FANOUT_POSSIBLE ||
-            statusData === HeadStatus.INITIALIZING) &&
-        proposalData?.data?.walletAddress !== address
-    ) {
-        return (
-            <motion.main
-                className="relative pt-20"
-                variants={{
-                    hidden: { opacity: 0 },
-                    visible: {
-                        opacity: 1,
-                        transition: { staggerChildren: 0.2, ease: "easeOut" },
-                    },
-                }}
-                initial="hidden"
-                animate="visible"
-            >
-                <div className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
-                    <motion.div
-                        className="flex flex-col items-center justify-center py-16 text-center"
-                        variants={{
-                            hidden: { opacity: 0, y: 20 },
-                            visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-                        }}
-                    >
-                        <motion.div
-                            className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900"
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                            <Image src={images.logo} alt="Logo" />
-                        </motion.div>
-                        <motion.h3
-                            className="text-2xl font-semibold text-gray-900 dark:text-white mb-2"
-                            variants={{
-                                hidden: { opacity: 0, y: 20 },
-                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-                            }}
-                        >
-                            Head Is Currently In Use
-                        </motion.h3>
-                        <motion.p
-                            className="text-lg text-gray-600 dark:text-gray-300 max-w-md mb-6"
-                            variants={{
-                                hidden: { opacity: 0, y: 20 },
-                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-                            }}
-                        >
-                            No tippers to display at the moment. Check back later or try a different page!
-                        </motion.p>
-                        <motion.div
-                            variants={{
-                                hidden: { opacity: 0, y: 20 },
-                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <Link
-                                href={routers.tipper}
-                                className="inline-flex items-center justify-center whitespace-nowrap rounded-sm bg-blue-600 dark:bg-white px-8 py-2 text-lg font-semibold text-white dark:text-blue-900 shadow-xl hover:bg-blue-700 dark:hover:bg-gray-100"
-                            >
-                                Go To Tipper
-                            </Link>
-                        </motion.div>
-                    </motion.div>
-                </div>
-            </motion.main>
         );
     }
 

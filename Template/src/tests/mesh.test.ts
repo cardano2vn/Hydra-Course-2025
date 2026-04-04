@@ -23,7 +23,9 @@ describe("This is testcase Tip and Cliam with Tipjar validator", function () {
                 words: APP_MNEMONIC.split(" ") || [],
             },
         });
-        owner = "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g";
+        owner = "addr_test1qrr879mjnxd3gjqjdgjxkwzfcnvcgsve927scqk5fc3gfs2hs03pn7uhujentyhzq3ays72u4xtfrlahyjalujhxufsqdeezc0";
+
+        console.log(await meshWallet.getChangeAddress());
     });
 
     jest.setTimeout(6_000_000);
@@ -36,7 +38,7 @@ describe("This is testcase Tip and Cliam with Tipjar validator", function () {
             minimumTip: 10_000_000,
         });
         const unsignedTx: string = await meshTxBuilder.tip({
-            amount: "10000000",
+            amount: "123456789",
         });
         const signedTx = await meshWallet.signTx(unsignedTx, true);
         const txHash = await meshWallet.submitTx(signedTx);

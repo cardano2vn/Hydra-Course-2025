@@ -9,11 +9,12 @@ import Tipper from "~/components/tipper";
 import Title from "~/components/title";
 import TipperSkeleton from "~/components/tipper-skeleton";
 import Pagination from "~/components/pagination";
-import { useWallet } from "~/hooks/use-wallet";
-import { getProposals } from "~/services/tipjar.service";
 import { routers } from "~/constants/routers";
 import { images } from "~/public/images";
 import { toast } from "sonner";
+import { useWallet } from "~/hooks/use-wallet";
+import { getAllProposals } from "~/services/tipjar.service";
+import { getUTxOsCommit } from "~/services/mesh.service";
 
 const TipperPage: React.FC = () => {
     const [page, setPage] = useState(1);
@@ -21,11 +22,12 @@ const TipperPage: React.FC = () => {
 
     const { data, isLoading, error } = useQuery({
         queryKey: ["proposals", page, address],
-        queryFn: () => getProposals({ limit: 12, page, walletAddress: address || "" }),
+        queryFn: async () => getAllProposals({ page: page, limit: 6, address: address || "" }),
     });
 
-    const noItemsContent = useMemo(
-        () => (
+    if (error) {
+        toast.error("Failed to load tippers");
+        return (
             <motion.div
                 className="flex flex-col items-center justify-center py-16 text-center"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -76,13 +78,7 @@ const TipperPage: React.FC = () => {
                     </Link>
                 </motion.div>
             </motion.div>
-        ),
-        [],
-    );
-
-    if (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to load tippers");
-        return noItemsContent;
+        );
     }
 
     return (
@@ -127,7 +123,56 @@ const TipperPage: React.FC = () => {
                             ))}
                         </motion.section>
                     ) : !data?.data.length ? (
-                        noItemsContent
+                        <motion.div
+                            className="flex flex-col items-center justify-center py-16 text-center"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5, ease: "easeOut" }}
+                        >
+                            <motion.div
+                                className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900"
+                                animate={{ rotate: [0, 10, -10, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            >
+                                <Image src={images.logo} alt="Tipjar Logo" />
+                            </motion.div>
+                            <motion.h3
+                                className="mb-2 text-2xl font-semibold text-gray-900 dark:text-white"
+                                variants={{
+                                    hidden: { opacity: 0, y: 20 },
+                                    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                                }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                No Tippers Available
+                            </motion.h3>
+                            <motion.p
+                                className="mb-6 max-w-md text-lg text-gray-600 dark:text-gray-300"
+                                variants={{
+                                    hidden: { opacity: 0, y: 20 },
+                                    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                                }}
+                                transition={{ delay: 0.4 }}
+                            >
+                                It looks like there are no tippers to display at the moment. Check back later or create your own Tipjar!
+                            </motion.p>
+                            <motion.div
+                                variants={{
+                                    hidden: { opacity: 0, y: 20 },
+                                    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                                }}
+                                transition={{ delay: 0.6 }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <Link
+                                    href={routers.dashboard}
+                                    className="inline-flex items-center justify-center rounded-sm bg-blue-600 px-8 py-2 text-lg font-semibold text-white shadow-xl hover:bg-blue-700 dark:bg-white dark:text-blue-900 dark:hover:bg-gray-100"
+                                >
+                                    Create Tipjar
+                                </Link>
+                            </motion.div>
+                        </motion.div>
                     ) : (
                         <motion.section
                             key="data"
@@ -140,9 +185,9 @@ const TipperPage: React.FC = () => {
                             animate="visible"
                             exit="exit"
                         >
-                            {data.data.map((result, index) => (
+                            {data?.data.map((result, index) => (
                                 <motion.div
-                                    key={result.walletAddress || index}
+                                    key={result.address || index}
                                     className="rounded-xl border border-blue-100 bg-white shadow-lg dark:border-blue-900/30 dark:bg-slate-900/80"
                                     variants={{
                                         hidden: { opacity: 0, y: 20 },
@@ -155,8 +200,8 @@ const TipperPage: React.FC = () => {
                                         image={result.image || images.logo}
                                         title={result.title || "Untitled Proposal"}
                                         author={result.author || "Unknown Author"}
-                                        slug={result.walletAddress || ""}
-                                        datetime={new Date(Number(result.datetime || Date.now())).toLocaleString("en-GB", {
+                                        slug={result.address || ""}
+                                        datetime={new Date(Number(result.createdAt || Date.now())).toLocaleString("en-GB", {
                                             day: "2-digit",
                                             month: "2-digit",
                                             year: "numeric",
@@ -182,7 +227,7 @@ const TipperPage: React.FC = () => {
                         animate="visible"
                         transition={{ delay: 0.2 }}
                     >
-                        <Pagination currentPage={page} totalPages={data?.totalPages ?? 0} setCurrentPage={setPage} />
+                        <Pagination currentPage={page} totalPages={data?.totalPages as number} setCurrentPage={setPage} />
                     </motion.div>
                 )}
             </div>

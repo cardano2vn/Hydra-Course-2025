@@ -2,6 +2,7 @@ import { blockfrostProvider } from "~/providers/cardano";
 import {
     applyParamsToScript,
     deserializeAddress,
+    deserializeDatum,
     IFetcher,
     MeshTxBuilder,
     MeshWallet,
@@ -14,6 +15,7 @@ import {
 } from "@meshsdk/core";
 import plutus from "../../contract/plutus.json";
 import { APP_NETWORK_ID } from "~/constants/enviroments";
+import { serialize } from "v8";
 
 export class MeshAdapter {
     protected spendAddress: string;
@@ -88,5 +90,19 @@ export class MeshAdapter {
         }
 
         return validator.compiledCode;
+    };
+
+    protected convertDatum = function (plutusData: string): Array<{ address: string; amount: number }> {
+        const datum = deserializeDatum(plutusData);
+
+        const result = datum.fields.map((item: any) => {
+            const addressHex = item.fields[0].bytes;
+            const address = Buffer.from(addressHex, "hex").toString("utf8");
+            const amount = item.fields[1].int;
+
+            return { address, amount: Number(amount) };
+        });
+
+        return result;
     };
 }

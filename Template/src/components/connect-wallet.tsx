@@ -2,16 +2,16 @@
 
 import dynamic from "next/dynamic";
 import { isNil } from "lodash";
-import { useWallet } from "~/hooks/use-wallet";
 import Account from "~/components/account";
 import { ClipLoader } from "react-spinners";
 
 import { routers } from "~/constants/routers";
 import Link from "next/link";
+import { useWallet } from "~/hooks/use-wallet";
+
 
 const Wallet = () => {
-    const { wallet } = useWallet();
-
+    const { wallet} = useWallet()
     return (
         <div>
             {!isNil(wallet) ? (

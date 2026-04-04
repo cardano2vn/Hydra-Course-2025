@@ -1,11 +1,8 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { isNil } from "lodash";
 import CountUp from "react-countup";
 import { Button } from "./ui/button";
 import {
@@ -19,87 +16,134 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import { Drawer, DrawerContent, DrawerTrigger } from "./ui/drawer";
-import Tipper from "./tipper";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+import { CommitSchema } from "~/lib/schema";
 import { useWallet } from "~/hooks/use-wallet";
-import { images } from "~/public/images";
-import { routers } from "~/constants/routers";
-import { DECIMAL_PLACE } from "~/constants/common";
-import { getBalanceTip, getBalanceCommit, withdraw } from "~/services/hydra.service";
-import { deleteCreator } from "~/services/tipjar.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { claim, fanout, publishDecommit, submitHydraTx } from "~/services/hydra.service";
+import { submitTx } from "~/services/mesh.service";
 import { toast } from "sonner";
+import { UTxO } from "@meshsdk/core";
 
-interface Proposal {
-    image?: string;
-    title?: string;
-    author?: string;
-    walletAddress?: string;
-    datetime?: string | number;
-}
+type Commit = z.infer<typeof CommitSchema>;
+// type Decommit = z.infer<typeof DecommitSchema>; // bạn sẽ thêm sau
 
-interface BalanceProps {
-    walletAddress: string;
-    assetName: string;
-    status: string;
-    proposal: Proposal;
-}
-
-const Balance: React.FC<BalanceProps> = ({ walletAddress, assetName, status, proposal }) => {
-    const { wallet, signTx } = useWallet();
+const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>; headUtxos: Array<UTxO>; status: string }) => {
+    const [activeTab, setActiveTab] = useState<"commit" | "decommit" | "close & fanout">("commit");
+    const { address, signTx } = useWallet();
     const queryClient = useQueryClient();
-    const router = useRouter();
-    const [loading, setLoading] = useState(false);
+    const [isLoadingClose, setIsLoadingClose] = useState(false);
+    const [isLoadingFanout, setIsLoadingFanout] = useState(false);
+    const [isLoadingClaim, setIsLoadingClaim] = useState(false);
 
-    const { data: balanceTip, isLoading: isLoadingTip } = useQuery({
-        queryKey: ["balance", walletAddress],
-        queryFn: () => getBalanceTip({ walletAddress }),
-        enabled: !!walletAddress,
+    // Form Commit
+    const {
+        register: commitRegister,
+        handleSubmit: handleCommitSubmit,
+        formState: { errors: commitErrors, isSubmitting: isSubmittingCommit },
+        setValue: setCommitValue,
+        reset: resetCommit,
+    } = useForm<Commit>({
+        resolver: zodResolver(CommitSchema),
+        defaultValues: { txHash: "", outputIndex: 0, amount: 0 },
     });
 
-    const { data: balanceCommit, isLoading: isLoadingCommit } = useQuery({
-        queryKey: ["balance-other", walletAddress],
-        queryFn: () => getBalanceCommit({ walletAddress }),
-        enabled: !!walletAddress,
+    // Form Decommit (tạm dùng CommitSchema, sau bạn thay bằng schema riêng)
+    const {
+        register: decommitRegister,
+        handleSubmit: handleDecommitSubmit,
+        formState: { errors: decommitErrors, isSubmitting: isSubmittingDecommit },
+        setValue: setDecommitValue,
+    } = useForm<Commit>({
+        resolver: zodResolver(CommitSchema),
+        defaultValues: { txHash: "", outputIndex: 0, amount: 0 },
     });
 
-    const handleWithdraw = useCallback(async () => {
-        try {
-            setLoading(true);
-            await withdraw({ status, isCreator: true });
-            await deleteCreator();
-            queryClient.invalidateQueries({ queryKey: ["status"] });
-            toast.success("Withdrawal successful!");
-            router.push(routers.dashboard);
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to withdraw");
-        } finally {
-            setLoading(false);
+    const handleSelectCommit = useCallback(
+        (e: React.ChangeEvent<HTMLSelectElement>) => {
+            const value = e.target.value;
+            if (value) {
+                const parsed = JSON.parse(value);
+                setCommitValue("txHash", parsed.txHash);
+                setCommitValue("outputIndex", parsed.outputIndex);
+                setCommitValue("amount", Number(parsed.amount));
+            } else {
+                resetCommit();
+            }
+        },
+        [setCommitValue, resetCommit],
+    );
+
+    const handleSelectDecommit = useCallback(
+        (e: React.ChangeEvent<HTMLSelectElement>) => {
+            const value = e.target.value;
+            if (value) {
+                const parsed = JSON.parse(value);
+                setDecommitValue("txHash", parsed.txHash);
+                setDecommitValue("outputIndex", parsed.outputIndex);
+                setDecommitValue("amount", Number(parsed.amount));
+            }
+        },
+        [setDecommitValue],
+    );
+
+    const handleFanout = useCallback(async () => {
+        if (!address) {
+            toast.error("Please connect your wallet");
+            return;
         }
-    }, [status, queryClient, router]);
+        try {
+            setIsLoadingFanout(true);
+            const unsignedTx = await fanout({ address: address as string, isCreator: false });
 
-    const adaConversionRate = 0.92; // Memoized conversion rate for USD
-    const balanceTipADA = useMemo(() => (balanceTip ? balanceTip / DECIMAL_PLACE : 0), [balanceTip]);
-    const balanceCommitADA = useMemo(() => (balanceCommit ? balanceCommit / DECIMAL_PLACE : 0), [balanceCommit]);
+            toast.success("Fanout completed successfully!");
+            await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] });
+            await queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] });
+        } catch (error) {
+            toast.error("Failed to fanout");
+            console.error("Fanout error:", error);
+        } finally {
+            setIsLoadingFanout(false);
+        }
+    }, [address, signTx, queryClient]);
+
+    const handleClaim = useCallback(async () => {
+        if (!address) {
+            toast.error("Please connect your wallet");
+            return;
+        }
+        try {
+            setIsLoadingClaim(true);
+            const unsignedTx = await claim({ address: address as string, isCreator: false });
+            const signedTx = await signTx(unsignedTx);
+            await submitHydraTx({ address: address as string, signedTx, isCreator: false });
+
+            toast.success("Claim completed successfully!");
+            await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] });
+            await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-commit", address] });
+            await queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] });
+        } catch (error) {
+            toast.error("Failed to claim");
+            console.error("Claim error:", error);
+        } finally {
+            setIsLoadingClaim(false);
+        }
+    }, [address, signTx, queryClient]);
 
     return (
         <motion.div
             className="mx-auto rounded-2xl border border-blue-200/50 bg-white p-6 shadow-lg dark:border-blue-900/30 dark:bg-slate-900"
-            variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-            }}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
         >
-            {/* Header Section */}
+            {/* Header Balance + Withdraw Button */}
             <div className="rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 p-4 dark:from-blue-900/50 dark:to-purple-900/50">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <motion.div
-                            className="rounded-full bg-white/90 p-2 dark:bg-slate-800/90"
-                            whileHover={{ scale: 1.1 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
+                        <motion.div className="rounded-full bg-white/90 p-2 dark:bg-slate-800/90" whileHover={{ scale: 1.1 }}>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="24"
@@ -111,7 +155,6 @@ const Balance: React.FC<BalanceProps> = ({ walletAddress, assetName, status, pro
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 className="h-6 w-6 text-blue-600 dark:text-blue-400"
-                                aria-hidden="true"
                             >
                                 <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" />
                                 <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
@@ -119,184 +162,183 @@ const Balance: React.FC<BalanceProps> = ({ walletAddress, assetName, status, pro
                         </motion.div>
                         <div>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Total Balance Tipped</p>
-                            <motion.p
-                                className="text-xl font-semibold text-blue-600 dark:text-blue-400"
-                                key={balanceTip}
-                                variants={{
-                                    initial: { opacity: 0, x: -10 },
-                                    animate: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-                                }}
-                                initial="initial"
-                                animate="animate"
-                            >
-                                {isLoadingTip || loading ? (
-                                    "0.00"
-                                ) : (
-                                    <CountUp start={0} end={balanceTipADA} duration={2.75} decimals={4} decimal="," separator=" " />
-                                )}{" "}
-                                ADA
-                            </motion.p>
+                            <motion.p className="text-xl font-semibold text-blue-600 dark:text-blue-400">0.00 ADA</motion.p>
                         </div>
                     </div>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                <Button
-                                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-                                    disabled={loading || isLoadingTip}
-                                    aria-label="Withdraw balance"
-                                >
-                                    {loading || isLoadingTip ? (
-                                        <motion.div
-                                            className="h-5 w-5 border-2 border-t-transparent border-white rounded-full"
-                                            animate={{ rotate: 360 }}
-                                            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                        />
-                                    ) : (
-                                        "Withdraw"
-                                    )}
-                                </Button>
-                            </motion.div>
-                        </AlertDialogTrigger>
-                        <AnimatePresence>
-                            <AlertDialogContent className="sm:max-w-md rounded-2xl bg-gradient-to-br from-blue-50/90 to-purple-50/90 p-6 dark:from-slate-900/90 dark:to-slate-800/90">
-                                <motion.div
-                                    variants={{
-                                        hidden: { opacity: 0, scale: 0.95 },
-                                        visible: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: "easeOut" } },
-                                        exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2, ease: "easeIn" } },
-                                    }}
-                                    initial="hidden"
-                                    animate="visible"
-                                    exit="exit"
-                                >
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                                            {isNil(wallet) ? "Connect Wallet Required" : "Withdraw Balance"}
-                                        </AlertDialogTitle>
-                                        <AlertDialogDescription className="text-sm text-gray-500 dark:text-gray-400">
-                                            {isNil(wallet)
-                                                ? "Please connect your wallet to withdraw funds."
-                                                : "This action will withdraw your total balance. It cannot be undone."}
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel asChild>
-                                            <Button
-                                                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
-                                                aria-label="Cancel withdraw"
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </AlertDialogCancel>
-                                        <AlertDialogAction
-                                            asChild
-                                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-                                        >
-                                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                <Button
-                                                    onClick={isNil(wallet) ? () => router.push(routers.login) : handleWithdraw}
-                                                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-                                                    disabled={loading}
-                                                    aria-label={isNil(wallet) ? "Connect wallet" : "Confirm withdraw"}
-                                                >
-                                                    {loading ? (
-                                                        <motion.div
-                                                            className="h-5 w-5 border-2 border-t-transparent border-white rounded-full"
-                                                            animate={{ rotate: 360 }}
-                                                            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                                        />
-                                                    ) : isNil(wallet) ? (
-                                                        "Connect Wallet"
-                                                    ) : (
-                                                        "Withdraw"
-                                                    )}
-                                                </Button>
-                                            </motion.div>
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </motion.div>
-                            </AlertDialogContent>
-                        </AnimatePresence>
-                    </AlertDialog>
+
+                    <Button className="bg-blue-600 hover:bg-blue-700" disabled={status !== "OPEN" || isLoadingClaim} onClick={handleClaim}>
+                        {isLoadingClaim ? "Processing Claim..." : "Claim"}
+                    </Button>
                 </div>
             </div>
 
-            {/* Balance Token Section */}
-            <div className="mt-4 rounded-lg bg-blue-50/80 p-4 dark:bg-slate-800/80">
-                <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Balance for Tipping Others</span>
-                    <Drawer>
-                        <DrawerTrigger asChild>
-                            <Button
-                                className="rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
-                                aria-label="View proposal information"
-                            >
-                                Proposal Information
-                            </Button>
-                        </DrawerTrigger>
-                        <DrawerContent>
-                            <div className="mx-auto w-full max-w-md">
-                                <Tipper
-                                    image={proposal.image || images.logo}
-                                    title={proposal.title || "Untitled Proposal"}
-                                    author={proposal.author || "Unknown Author"}
-                                    slug={proposal.walletAddress || ""}
-                                    datetime={new Date(Number(proposal.datetime || Date.now())).toLocaleString("en-GB", {
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    })}
-                                    participants={2}
-                                />
-                            </div>
-                        </DrawerContent>
-                    </Drawer>
-                </div>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <motion.span
-                            className="font-semibold text-blue-600 dark:text-blue-400"
-                            key={balanceCommit}
-                            variants={{
-                                initial: { opacity: 0, x: -10 },
-                                animate: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-                            }}
-                            initial="initial"
-                            animate="animate"
+            {/* Tab Navigation - chỉ hiện khi OPEN */}
+            {status === "OPEN" && (
+                <div className="mt-6 flex border-b border-gray-200 dark:border-slate-700">
+                    {(["commit", "decommit", "close & fanout"] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`flex-1 py-3 text-sm font-medium transition-all relative capitalize ${
+                                activeTab === tab ? "text-blue-600 dark:text-blue-400" : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                            }`}
                         >
-                            {isLoadingCommit ? (
-                                "0.00"
-                            ) : (
-                                <CountUp start={0} end={balanceCommitADA} duration={2.75} decimals={4} decimal="," separator=" " />
-                            )}{" "}
-                            ADA
-                        </motion.span>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                            ≈ $
-                            {isLoadingCommit ? (
-                                "0.00"
-                            ) : (
-                                <CountUp
-                                    start={0}
-                                    end={balanceCommitADA * adaConversionRate}
-                                    duration={2.75}
-                                    decimals={4}
-                                    decimal=","
-                                    separator=" "
+                            {tab}
+                            {activeTab === tab && (
+                                <motion.div
+                                    layoutId="activeIndicator"
+                                    className="absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 bg-blue-600 rounded"
                                 />
-                            )}{" "}
-                            USD
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Image src={images.cardano} alt="Cardano ADA" className="h-5 w-5" />
-                        <span className="font-medium text-gray-800 dark:text-gray-300">ADA</span>
-                    </div>
+                            )}
+                        </button>
+                    ))}
                 </div>
-            </div>
+            )}
+
+            <AnimatePresence mode="wait">
+                {/* ==================== STATUS !== OPEN ==================== */}
+                {status !== "OPEN" ? (
+                    <motion.div
+                        key="closed-state"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="mt-6"
+                    >
+                        <div className="rounded-lg bg-blue-50/80 p-4 dark:bg-slate-800/80">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                To retrieve your assets, please connect your wallet and use the Withdraw button above.
+                            </p>
+                        </div>
+                    </motion.div>
+                ) : (
+                    /* ==================== STATUS === "OPEN" ==================== */
+                    <>
+                        {/* TAB COMMIT */}
+                        {activeTab === "commit" && (
+                            <motion.div
+                                key="commit"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="mt-6"
+                            >
+                                <form className="space-y-4">
+                                    <div className="relative">
+                                        <label className="absolute -top-2 left-3 bg-white dark:bg-slate-900 px-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                                            Select ADA to Commit
+                                        </label>
+                                        <select
+                                            onChange={handleSelectCommit}
+                                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-3 px-4 focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="">-- Select UTXO from wallet --</option>
+                                            {walletUtxos.map((utxo, i) => (
+                                                <option key={i} value={JSON.stringify(utxo)}>
+                                                    
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button className="w-full bg-blue-600 text-white" disabled={isSubmittingCommit}>
+                                                Commit to Head
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirm Commit</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    You are about to commit {commitErrors.amount ? "" : "selected amount"} ADA into the Hydra Head.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction>Confirm Commit</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </form>
+                            </motion.div>
+                        )}
+
+                        {/* TAB DECOMMIT */}
+                        {activeTab === "decommit" && (
+                            <motion.div
+                                key="decommit"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="mt-6"
+                            >
+                                <form className="space-y-4">
+                                    <div className="relative">
+                                        <label className="absolute -top-2 left-3 bg-white dark:bg-slate-900 px-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                                            Select ADA to Decommit
+                                        </label>
+                                        <select
+                                            onChange={handleSelectDecommit}
+                                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-3 px-4 focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="">-- Select UTXO from Head --</option>
+                                            
+                                        </select>
+                                    </div>
+
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button className="w-full bg-orange-600 hover:bg-orange-700" disabled={isSubmittingDecommit}>
+                                                Decommit from Head
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirm Decommit</AlertDialogTitle>
+                                                <AlertDialogDescription>This UTXO will be moved back to your Layer 1 wallet.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction>Confirm Decommit</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </form>
+                            </motion.div>
+                        )}
+
+                        {/* TAB CLOSE */}
+
+                        {/* TAB FANOUT */}
+                        {activeTab === "close & fanout" && (
+                            <motion.div
+                                key="fanout"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="mt-6 text-center"
+                            >
+                                <div className="rounded-xl bg-purple-50 dark:bg-purple-900/30 p-8 space-y-4">
+                                    <div>
+                                        <p className="mb-6 text-lg font-medium text-purple-800 dark:text-purple-200">
+                                            Fanout will distribute all funds to participants according to the final snapshot.
+                                        </p>
+                                        <Button
+                                            size="lg"
+                                            className="bg-purple-600 hover:bg-purple-700 w-full"
+                                            onClick={handleFanout}
+                                            disabled={isLoadingFanout}
+                                        >
+                                            {isLoadingFanout ? "Processing Close & Fanout..." : "Fanout & Fanout"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

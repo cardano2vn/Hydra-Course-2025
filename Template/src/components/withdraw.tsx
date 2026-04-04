@@ -4,7 +4,7 @@ import { memo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "./icons";
 import { useQuery } from "@tanstack/react-query";
-import { getWithdraws } from "~/services/tipjar.service";
+
 import Pagination from "./pagination";
 
 // Define types for type safety
@@ -29,20 +29,50 @@ const stateVariants = {
     visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
+const data = [
+    {
+        type: "Withdraw",
+        status: "Complete",
+        datetime: Math.floor(Date.now() / 1000) - 86400 * 3, // 3 days ago
+        txHash: "a1b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890ab",
+        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
+        amount: "5000000",
+    },
+    {
+        type: "Withdraw",
+        status: "Complete",
+        datetime: Math.floor(Date.now() / 1000) - 86400 * 2, // 2 days ago
+        txHash: "b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890bc",
+        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
+        amount: "2500000",
+    },
+    {
+        type: "Withdraw",
+        status: "Complete",
+        datetime: Math.floor(Date.now() / 1000) - 86400, // 1 day ago
+        txHash: "c3d4e5f678901234567890abcdef1234567890abcdef1234567890cd",
+        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
+        amount: "10000000",
+    },
+    {
+        type: "Withdraw",
+        status: "Complete",
+        datetime: Math.floor(Date.now() / 1000) - 3600 * 6, // 6 hours ago
+        txHash: "d4e5f678901234567890abcdef1234567890abcdef1234567890de",
+        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
+        amount: "1500000",
+    },
+    {
+        type: "Withdraw",
+        status: "Complete",
+        datetime: Math.floor(Date.now() / 1000) - 1800, // 30 minutes ago
+        txHash: "e5f678901234567890abcdef1234567890abcdef1234567890ef",
+        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
+        amount: "7500000",
+    },
+];
+
 const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
-    const [page, setPage] = useState(1);
-
-    const { data, isLoading, error } = useQuery({
-        queryKey: ["withdraw", walletAddress, page],
-        queryFn: () =>
-            getWithdraws({
-                walletAddress: walletAddress,
-                page: page,
-                limit: 6,
-            }),
-    });
-
-    // Format lovelace to ADA (1 ADA = 1,000,000 lovelace)
     const formatAmount = (amount: string | null): string => {
         if (!amount) return "0.00 ADA";
         return `${(parseInt(amount) / 1_000_000).toFixed(2)} ADA`;
@@ -83,7 +113,7 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
 
             <div className="mt-4">
                 <AnimatePresence mode="wait">
-                    {isLoading ? (
+                    {false ? (
                         <motion.div
                             key="loading"
                             className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-300"
@@ -102,7 +132,7 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
                             />
                             <p className="mt-4 text-base font-medium text-gray-800 dark:text-gray-200">Loading withdrawals...</p>
                         </motion.div>
-                    ) : error ? (
+                    ) : false ? (
                         <motion.div
                             key="error"
                             className="flex flex-col items-center justify-center py-12 text-red-500 dark:text-red-400"
@@ -114,9 +144,9 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
                             animate="visible"
                             exit="hidden"
                         >
-                            <p className="text-base font-medium">Error: {error instanceof Error ? error.message : "Failed to load withdrawals"}</p>
+                            <p className="text-base font-medium">Error: {"Failed to load withdrawals"}</p>
                         </motion.div>
-                    ) : !data?.data || data.data.length === 0 ? (
+                    ) : true ? (
                         <motion.div
                             key="empty"
                             className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-300"
@@ -170,7 +200,7 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200 dark:bg-slate-900 dark:divide-gray-700">
-                                        {data.data.map((withdraw, index) => (
+                                        {data.map((withdraw, index) => (
                                             <motion.tr
                                                 key={withdraw.txHash}
                                                 className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-200"
@@ -208,14 +238,14 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
                                     </tbody>
                                 </table>
                             </div>
-                            {data.totalPages && data.totalPages > 1 && (
+                            {true && (
                                 <motion.div
                                     className="flex justify-center"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.3, delay: 0.2 }}
                                 >
-                                    <Pagination totalPages={data.totalPages} currentPage={page} setCurrentPage={setPage} />
+                                    <Pagination totalPages={2} currentPage={1} setCurrentPage={null!} />
                                 </motion.div>
                             )}
                         </motion.div>
