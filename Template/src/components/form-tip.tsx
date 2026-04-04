@@ -54,6 +54,7 @@ const FormTip = function ({ tipAddress, status }: { tipAddress: string; status: 
         queryFn: () => getUTxOsFromHydra(address as string),
         enabled: !!address,
     });
+
     const {
         register,
         handleSubmit,
@@ -204,34 +205,28 @@ const FormTip = function ({ tipAddress, status }: { tipAddress: string; status: 
             try {
                 const utxo = utxosFromHydra?.find((utxo) => utxo.input.txHash === data.txHash && utxo.input.outputIndex === data.outputIndex);
                 if (!utxo) {
-                    toast.error("Selected UTxO not found in Head. Please select a valid UTxO.");
-                    return;
+                    toast.error("Selected UTxO not found in Hydra. Please select a valid UTxO.");
                 }
-                const unsignTx = await decommit({
+                const unsignedTx = await decommit({
                     address: address as string,
-                    utxo: utxo,
+                    utxo: utxo as UTxO,
                     isCreator: false,
                 });
-                const signedTx = await signTx(unsignTx);
+                const signedTx = await signTx(unsignedTx);
                 await publishDecommit({ address: address as string, signedTx, isCreator: false });
 
                 toast.success("Successfully decommitted from the head!");
-                resetDecommit();
-                setSelectedDecommitValue("");
-
                 await Promise.allSettled([
                     queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] }),
                     queryClient.invalidateQueries({ queryKey: ["fetch-utxo-commit", address] }),
                     queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] }),
                 ]);
             } catch (error) {
-                toast.error("An error occurred while decommitting. Please try again.");
-                console.error("Decommit error:", error);
+                toast.error("An error occurred while submitting your proposal. Please try again.");
             }
         },
         [address, signTx, utxosFromHydra, queryClient],
     );
-
     return (
         <motion.div
             className="rounded-2xl border border-blue-200/50 bg-white p-6 shadow-lg dark:border-blue-900/30 dark:bg-slate-900"
@@ -263,7 +258,28 @@ const FormTip = function ({ tipAddress, status }: { tipAddress: string; status: 
                             initial="initial"
                             animate="animate"
                         >
-                            {true ? "0.00" : <CountUp start={0} end={0} duration={2.75} separator=" " decimals={4} decimal="," />} ADA
+                            {false ? (
+                                "0.00"
+                            ) : (
+                                <CountUp
+                                    start={0}
+                                    end={
+                                        Number(
+                                            utxosFromHydra
+                                                ?.filter((utxo) => utxo.output.address === address)
+                                                .reduce((total, utxo) => {
+                                                    const lovelace = Number(utxo.output.amount.find((a) => a.unit === "lovelace")?.quantity || 0);
+                                                    return total + lovelace;
+                                                }, 0),
+                                        ) / DECIMAL_PLACE
+                                    }
+                                    duration={2.75}
+                                    separator=" "
+                                    decimals={4}
+                                    decimal=","
+                                />
+                            )}{" "}
+                            ADA
                         </motion.p>
                     </div>
                 </div>
@@ -565,7 +581,7 @@ const FormTip = function ({ tipAddress, status }: { tipAddress: string; status: 
                                     >
                                         <form
                                             ref={decommitFormRef}
-                                            onSubmit={handleFormSubmitDecommit(handleSubmitDecommit)}
+                                            onSubmit={handleFormSubmitDecommit(handleSubmitDecommit!)}
                                             className="flex flex-col gap-4 rounded-lg bg-blue-50/80 p-4 dark:bg-slate-800/80"
                                         >
                                             <motion.div
@@ -598,8 +614,7 @@ const FormTip = function ({ tipAddress, status }: { tipAddress: string; status: 
                                                                     amount: utxo.output.amount.find((u) => u.unit === "lovelace")?.quantity,
                                                                 })}
                                                             >
-                                                                {Number(utxo.output.amount.find((u) => u.unit === "lovelace")?.quantity) /
-                                                                    DECIMAL_PLACE}
+                                                                {Number(utxo.output.amount.find((u) => u.unit === "lovelace")?.quantity)}
                                                             </option>
                                                         );
                                                     })}

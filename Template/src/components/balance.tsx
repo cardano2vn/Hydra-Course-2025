@@ -22,7 +22,7 @@ import z from "zod";
 import { CommitSchema } from "~/lib/schema";
 import { useWallet } from "~/hooks/use-wallet";
 import { useQueryClient } from "@tanstack/react-query";
-import { claim, commit, decommit, fanout, publishDecommit, submitHydraTx } from "~/services/hydra.service";
+import { claim, commit, decommit, fanout, submitHydraTx } from "~/services/hydra.service";
 import { submitTx } from "~/services/mesh.service";
 import { toast } from "sonner";
 import { UTxO } from "@meshsdk/core";
@@ -157,7 +157,7 @@ const Balance = ({
                     isCreator: false,
                 });
                 const signedTx = await signTx(unsignedTx);
-                await publishDecommit({ address: address as string, signedTx, isCreator: false });
+                // await publishDecommit({ address: address as string, signedTx, isCreator: false });
 
                 toast.success("Successfully decommitted from the head!");
                 await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] });
