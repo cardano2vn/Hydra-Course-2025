@@ -400,7 +400,9 @@ export default function Dashboard() {
                                     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                                 }}
                             >
-                                <Balance status={headStatus as string} headUtxos={null!} walletUtxos={null!} />
+                                {utxosFromHydra && utxosCommit && (
+                                    <Balance status={headStatus as string} headUtxos={utxosFromHydra!} walletUtxos={utxosCommit!} />
+                                )}
                             </motion.div>
                             <motion.div
                                 variants={{

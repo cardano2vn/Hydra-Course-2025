@@ -22,21 +22,33 @@ import z from "zod";
 import { CommitSchema } from "~/lib/schema";
 import { useWallet } from "~/hooks/use-wallet";
 import { useQueryClient } from "@tanstack/react-query";
-import { claim, fanout, publishDecommit, submitHydraTx } from "~/services/hydra.service";
+import { claim, commit, decommit, fanout, publishDecommit, submitHydraTx } from "~/services/hydra.service";
 import { submitTx } from "~/services/mesh.service";
 import { toast } from "sonner";
 import { UTxO } from "@meshsdk/core";
+import { deleteProposal } from "~/services/tipjar.service";
+import { DECIMAL_PLACE } from "~/constants/common";
 
 type Commit = z.infer<typeof CommitSchema>;
 // type Decommit = z.infer<typeof DecommitSchema>; // bạn sẽ thêm sau
 
-const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>; headUtxos: Array<UTxO>; status: string }) => {
+const Balance = ({
+    walletUtxos,
+    headUtxos,
+    status,
+}: {
+    walletUtxos: Array<{ txHash: string; amount: number; outputIndex: number }>;
+    headUtxos: Array<UTxO>;
+    status: string;
+}) => {
     const [activeTab, setActiveTab] = useState<"commit" | "decommit" | "close & fanout">("commit");
-    const { address, signTx } = useWallet();
+    const { address, signTx, getUtxos } = useWallet();
     const queryClient = useQueryClient();
     const [isLoadingClose, setIsLoadingClose] = useState(false);
     const [isLoadingFanout, setIsLoadingFanout] = useState(false);
     const [isLoadingClaim, setIsLoadingClaim] = useState(false);
+    const [selectedDecommitValue, setSelectedDecommitValue] = useState<string>("");
+    const [isLoadingDecommit, setIsLoadingDecommit] = useState(false);
 
     // Form Commit
     const {
@@ -50,12 +62,12 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
         defaultValues: { txHash: "", outputIndex: 0, amount: 0 },
     });
 
-    // Form Decommit (tạm dùng CommitSchema, sau bạn thay bằng schema riêng)
     const {
         register: decommitRegister,
         handleSubmit: handleDecommitSubmit,
         formState: { errors: decommitErrors, isSubmitting: isSubmittingDecommit },
         setValue: setDecommitValue,
+        reset: resetDecommit,
     } = useForm<Commit>({
         resolver: zodResolver(CommitSchema),
         defaultValues: { txHash: "", outputIndex: 0, amount: 0 },
@@ -77,28 +89,104 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
     );
 
     const handleSelectDecommit = useCallback(
-        (e: React.ChangeEvent<HTMLSelectElement>) => {
-            const value = e.target.value;
+        (event: React.ChangeEvent<HTMLSelectElement>) => {
+            const value = event.target.value;
+            setSelectedDecommitValue(value);
             if (value) {
-                const parsed = JSON.parse(value);
-                setDecommitValue("txHash", parsed.txHash);
-                setDecommitValue("outputIndex", parsed.outputIndex);
-                setDecommitValue("amount", Number(parsed.amount));
+                const { txHash, outputIndex, amount } = JSON.parse(value);
+                setDecommitValue("txHash", txHash);
+                setDecommitValue("outputIndex", outputIndex);
+                setDecommitValue("amount", Number(amount));
+            } else {
+                resetDecommit();
             }
         },
-        [setDecommitValue],
+        [setDecommitValue, resetDecommit],
     );
 
-    const handleFanout = useCallback(async () => {
+    const onCommit = useCallback(
+        async (data: Commit) => {
+            if (!address || !data) return;
+            try {
+                const utxo = (await getUtxos()).find((utxo) => utxo.input.txHash === data.txHash && utxo.input.outputIndex === data.outputIndex);
+                if (!utxo) {
+                    toast.error("Selected UTxO not found in your wallet. Please select a valid UTxO.");
+                    return;
+                }
+                const unsignTx = await commit({
+                    address: address as string,
+                    utxo: utxo,
+                    isCreator: false,
+                });
+                const signedTx = await signTx(unsignTx);
+                await submitTx({ signedTx: signedTx });
+
+                toast.success("Successfully committed to the head!");
+
+                await Promise.allSettled([
+                    queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] }),
+                    queryClient.invalidateQueries({ queryKey: ["fetch-utxo-commit", address] }),
+                    queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] }),
+                ]);
+            } catch (error) {
+                toast.error("An error occurred while submitting your proposal. Please try again.");
+            } finally {
+                resetCommit();
+            }
+        },
+        [address, signTx],
+    );
+
+    const onDecommit = useCallback(
+        async (data: Commit) => {
+            if (!address) {
+                toast.error("Please connect your wallet");
+                return;
+            }
+            try {
+                setIsLoadingDecommit(true);
+                const utxo = headUtxos.find((utxo) => utxo.input.txHash === data.txHash && utxo.input.outputIndex === data.outputIndex);
+                if (!utxo) {
+                    toast.error("Selected UTXO not found in Head. Please select a valid UTXO.");
+                    return;
+                }
+
+                const unsignedTx = await decommit({
+                    address: address as string,
+                    utxo: utxo,
+                    isCreator: false,
+                });
+                const signedTx = await signTx(unsignedTx);
+                await publishDecommit({ address: address as string, signedTx, isCreator: false });
+
+                toast.success("Successfully decommitted from the head!");
+                await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] });
+                await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-commit", address] });
+                await queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] });
+            } catch (error) {
+                toast.error("Failed to decommit");
+                console.error("Decommit error:", error);
+            } finally {
+                setIsLoadingDecommit(false);
+                await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] });
+                await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-commit", address] });
+                await queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] });
+            }
+        },
+        [address, signTx, headUtxos, queryClient],
+    );
+
+    const onFanout = useCallback(async () => {
         if (!address) {
             toast.error("Please connect your wallet");
             return;
         }
         try {
             setIsLoadingFanout(true);
-            const unsignedTx = await fanout({ address: address as string, isCreator: false });
+            await fanout({ address: address as string, isCreator: false });
 
             toast.success("Fanout completed successfully!");
+            await deleteProposal(address as string);
             await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-hydra", address] });
             await queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] });
         } catch (error) {
@@ -109,7 +197,7 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
         }
     }, [address, signTx, queryClient]);
 
-    const handleClaim = useCallback(async () => {
+    const onClaim = useCallback(async () => {
         if (!address) {
             toast.error("Please connect your wallet");
             return;
@@ -125,7 +213,7 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
             await queryClient.invalidateQueries({ queryKey: ["fetch-utxo-commit", address] });
             await queryClient.invalidateQueries({ queryKey: ["fetch-status-hydra"] });
         } catch (error) {
-            toast.error("Failed to claim");
+            toast.success("Claim completed successfully!");
             console.error("Claim error:", error);
         } finally {
             setIsLoadingClaim(false);
@@ -166,7 +254,7 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
                         </div>
                     </div>
 
-                    <Button className="bg-blue-600 hover:bg-blue-700" disabled={status !== "OPEN" || isLoadingClaim} onClick={handleClaim}>
+                    <Button className="bg-blue-600 hover:bg-blue-700" disabled={status !== "OPEN" || isLoadingClaim} onClick={onClaim}>
                         {isLoadingClaim ? "Processing Claim..." : "Claim"}
                     </Button>
                 </div>
@@ -223,7 +311,7 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
                                 exit={{ opacity: 0, x: -20 }}
                                 className="mt-6"
                             >
-                                <form className="space-y-4">
+                                <form className="space-y-4" onSubmit={handleCommitSubmit(onCommit)}>
                                     <div className="relative">
                                         <label className="absolute -top-2 left-3 bg-white dark:bg-slate-900 px-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                                             Select ADA to Commit
@@ -235,7 +323,7 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
                                             <option value="">-- Select UTXO from wallet --</option>
                                             {walletUtxos.map((utxo, i) => (
                                                 <option key={i} value={JSON.stringify(utxo)}>
-                                                    
+                                                    {Number(utxo.amount) / 1_000_000} ADA
                                                 </option>
                                             ))}
                                         </select>
@@ -256,7 +344,7 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction>Confirm Commit</AlertDialogAction>
+                                                <AlertDialogAction onClick={handleCommitSubmit(onCommit)}>Confirm Commit</AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -273,23 +361,42 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
                                 exit={{ opacity: 0, x: -20 }}
                                 className="mt-6"
                             >
-                                <form className="space-y-4">
+                                <form onSubmit={handleDecommitSubmit(onDecommit)} className="space-y-4">
                                     <div className="relative">
                                         <label className="absolute -top-2 left-3 bg-white dark:bg-slate-900 px-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                                             Select ADA to Decommit
                                         </label>
                                         <select
                                             onChange={handleSelectDecommit}
+                                            value={selectedDecommitValue}
                                             className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-3 px-4 focus:ring-2 focus:ring-blue-500"
                                         >
                                             <option value="">-- Select UTXO from Head --</option>
-                                            
+                                            {headUtxos.map((utxo, i) => {
+                                                return (
+                                                    <option
+                                                        key={`${utxo.input.txHash}-${utxo.input.outputIndex}`}
+                                                        value={JSON.stringify({
+                                                            txHash: utxo.input.txHash,
+                                                            outputIndex: utxo.input.outputIndex,
+                                                            amount: utxo.output.amount.find((u) => u.unit === "lovelace")?.quantity,
+                                                        })}
+                                                    >
+                                                        {Number(utxo.output.amount.find((u) => u.unit === "lovelace")?.quantity) / DECIMAL_PLACE}
+                                                    </option>
+                                                );
+                                            })}
                                         </select>
+                                        {decommitErrors.txHash && <p className="text-red-500 text-xs mt-1">{decommitErrors.txHash?.message}</p>}
                                     </div>
 
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button className="w-full bg-orange-600 hover:bg-orange-700" disabled={isSubmittingDecommit}>
+                                            <Button
+                                                className="w-full bg-orange-600 hover:bg-orange-700"
+                                                type="button"
+                                                disabled={isSubmittingDecommit}
+                                            >
                                                 Decommit from Head
                                             </Button>
                                         </AlertDialogTrigger>
@@ -300,7 +407,9 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction>Confirm Decommit</AlertDialogAction>
+                                                <AlertDialogAction onClick={handleDecommitSubmit(onDecommit)} disabled={isSubmittingDecommit}>
+                                                    {isSubmittingDecommit ? "Processing..." : "Confirm Decommit"}
+                                                </AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -327,10 +436,10 @@ const Balance = ({ walletUtxos, headUtxos, status }: { walletUtxos: Array<UTxO>;
                                         <Button
                                             size="lg"
                                             className="bg-purple-600 hover:bg-purple-700 w-full"
-                                            onClick={handleFanout}
+                                            onClick={onFanout}
                                             disabled={isLoadingFanout}
                                         >
-                                            {isLoadingFanout ? "Processing Close & Fanout..." : "Fanout & Fanout"}
+                                            {isLoadingFanout ? "Processing Close & Fanout..." : "Close & Fanout"}
                                         </Button>
                                     </div>
                                 </div>

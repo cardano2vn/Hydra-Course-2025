@@ -72,6 +72,6 @@ export async function getProposalByAddress(address: string) {
     return data;
 }
 
-export async function deleteProposal(id: string) {
-    await prisma.proposal.delete({ where: { id: id } });
+export async function deleteProposal(address: string) {
+    await prisma.proposal.deleteMany({ where: { address } });
 }

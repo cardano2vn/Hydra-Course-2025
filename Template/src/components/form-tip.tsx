@@ -192,6 +192,7 @@ const FormTip = function ({ tipAddress, status }: { tipAddress: string; status: 
                 ]);
             } catch (error) {
                 toast.success("Tip sent successfully!");
+                resetTip();
             }
         },
         [address, signTx, tipAddress, queryClient],
