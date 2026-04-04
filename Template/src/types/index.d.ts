@@ -242,10 +242,8 @@ export interface Plutus {
 }
 
 export type Recent = {
-    walletAddress: string;
+    address: string;
     amount: number;
-    txHash: string;
-    datetime: string;
 };
 
 export type HydraStatus = (typeof status)[number];

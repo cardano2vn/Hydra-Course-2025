@@ -6,7 +6,7 @@ import FormTip from "~/components/form-tip";
 import Status from "~/components/status";
 import Withdraw from "~/components/withdraw";
 import { useParams } from "next/navigation";
-import { getStatus } from "~/services/hydra.service";
+import { getRecent, getStatus } from "~/services/hydra.service";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Page() {
@@ -15,6 +15,13 @@ export default function Page() {
         queryKey: ["fetch-status-hydra"],
         queryFn: () => getStatus(),
     });
+
+    const { data: recents, isLoading: isLoadingRecent } = useQuery({
+        queryKey: ["fetch-recent-hydra"],
+        queryFn: () => getRecent({ address: params.address as string }),
+    });
+
+    console.log(recents);
     return (
         <aside className="container mx-auto py-8 px-4 pt-24">
             <div className="max-w-7xl mx-auto space-y-6 px-4 py-8">
@@ -32,7 +39,7 @@ export default function Page() {
                         <Info link={``} />
                     </div>
                     <div className="space-y-6 flex flex-col">
-                        <Recent walletAddress={""} />
+                        <Recent recents={recents!} isLoading={isLoadingRecent} />
                     </div>
                 </section>
 

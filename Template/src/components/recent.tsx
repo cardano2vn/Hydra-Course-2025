@@ -10,7 +10,7 @@ import Image from "next/image";
 import { images } from "~/public/images*";
 import { shortenString } from "~/lib/utils";
 
-const Recent = function ({ walletAddress }: { walletAddress: string }) {
+const Recent = function ({ recents, isLoading }: { recents: Array<{ address: string; amount: number }>; isLoading: boolean }) {
     return (
         <motion.div
             className=" rounded-2xl h-full border border-blue-200/50 bg-white shadow-lg dark:border-blue-900/30 dark:bg-slate-900"
@@ -38,12 +38,12 @@ const Recent = function ({ walletAddress }: { walletAddress: string }) {
 
                 <div className="mt-4 flex-1 overflow-auto">
                     <AnimatePresence mode="wait">
-                        {true ? (
+                        {isLoading ? (
                             <NotFound key="not-found" />
-                        ) : true ? (
+                        ) : isLoading ? (
                             <Loading key="loading" />
                         ) : (
-                            <Result key="result" data={null!} page={0} setPage={null!} totalPages={0} />
+                            <Result key="result" data={recents!} page={0} setPage={null!} totalPages={0} />
                         )}
                     </AnimatePresence>
                 </div>
@@ -117,23 +117,17 @@ const Result = function ({
                     <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider dark:text-gray-200">
-                                Hash
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider dark:text-gray-200">
                                 Address
                             </th>
                             <th className="px-4 py-3 text-center text-xs font-semibold text-gray-900 uppercase tracking-wider dark:text-gray-200">
                                 Amount (ADA)
-                            </th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-900 uppercase tracking-wider dark:text-gray-200">
-                                Date
                             </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200 dark:bg-slate-900 dark:divide-gray-700">
                         {data.map((item, index) => (
                             <motion.tr
-                                key={item.txHash}
+                                key={index}
                                 className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-200"
                                 variants={{
                                     hidden: { opacity: 0, x: -10 },
@@ -143,18 +137,8 @@ const Result = function ({
                                 animate="visible"
                                 transition={{ delay: index * 0.1 }}
                             >
-                                <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-300">{shortenString(item.txHash)}</td>
-                                <td className="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{shortenString(item.walletAddress)}</td>
+                                <td className="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{shortenString(item.address, 20)}</td>
                                 <td className="px-4 py-3 text-center text-sm font-semibold text-green-600 dark:text-green-400">{item.amount}</td>
-                                <td className="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
-                                    {new Date(Number(item.datetime)).toLocaleString("en-GB", {
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    })}
-                                </td>
                             </motion.tr>
                         ))}
                     </tbody>

@@ -275,3 +275,35 @@ export const getUTxOsFromHydra = async function (walletAddress: string) {
 
     return await hydraProvider.fetchAddressUTxOs(walletAddress);
 };
+
+export const getRecent = async function ({ address }: { address: string }) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: HYDRA_HTTP_URL || HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: address,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        const utxo = (await hydraProvider.fetchAddressUTxOs(hydraTxBuilder.spendAddress)).find((utxo) => utxo.output.plutusData);
+        return hydraTxBuilder.convertDatum(utxo?.output.plutusData as string);
+    } catch (error) {
+        throw error;
+    }
+};

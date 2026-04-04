@@ -2,6 +2,7 @@ import { blockfrostProvider } from "~/providers/cardano";
 import {
     applyParamsToScript,
     deserializeAddress,
+    deserializeDatum,
     IFetcher,
     mConStr0,
     mConStr2,
@@ -166,7 +167,6 @@ export class HydraAdapter {
             return await this.hydraInstance.commitEmpty();
         }
 
-
         const { walletAddress, utxos, collateral } = await this.getWalletForTx();
 
         const unsignedTx = this.meshTxBuilder
@@ -308,5 +308,19 @@ export class HydraAdapter {
             collateral: collaterals[0],
             walletAddress: walletAddress,
         };
+    };
+
+    public convertDatum = function (plutusData: string): Array<{ address: string; amount: number }> {
+        const datum = deserializeDatum(plutusData);
+
+        const result = datum.fields.map((item: any) => {
+            const addressHex = item.fields[0].bytes;
+            const address = Buffer.from(addressHex, "hex").toString("utf8");
+            const amount = item.fields[1].int;
+
+            return { address, amount: Number(amount) };
+        });
+
+        return result;
     };
 }

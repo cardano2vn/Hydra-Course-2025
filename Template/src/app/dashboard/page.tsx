@@ -420,7 +420,7 @@ export default function Dashboard() {
                                 visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                             }}
                         >
-                            <Recent walletAddress={null!} />
+                            <Recent recents={null!} isLoading={false} />
                         </motion.div>
                     </motion.section>
                     <motion.div
