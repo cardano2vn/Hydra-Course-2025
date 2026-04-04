@@ -44,13 +44,11 @@ const Balance = ({
     const [activeTab, setActiveTab] = useState<"commit" | "decommit" | "close & fanout">("commit");
     const { address, signTx, getUtxos } = useWallet();
     const queryClient = useQueryClient();
-    const [isLoadingClose, setIsLoadingClose] = useState(false);
     const [isLoadingFanout, setIsLoadingFanout] = useState(false);
     const [isLoadingClaim, setIsLoadingClaim] = useState(false);
     const [selectedDecommitValue, setSelectedDecommitValue] = useState<string>("");
     const [isLoadingDecommit, setIsLoadingDecommit] = useState(false);
 
-    // Form Commit
     const {
         register: commitRegister,
         handleSubmit: handleCommitSubmit,

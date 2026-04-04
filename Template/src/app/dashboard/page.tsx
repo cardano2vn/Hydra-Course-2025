@@ -29,7 +29,7 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWallet } from "~/hooks/use-wallet";
-import { commit, getStatus, getUTxOsFromHydra } from "~/services/hydra.service";
+import { commit, getRecent, getStatus, getUTxOsFromHydra } from "~/services/hydra.service";
 import { getUTxOsCommit, submitTx } from "~/services/mesh.service";
 import { DECIMAL_PLACE } from "~/constants/common";
 import { toast } from "sonner";
@@ -62,6 +62,11 @@ export default function Dashboard() {
     const { data: headStatus, isLoading: isLoadingHeadStatus } = useQuery({
         queryKey: ["fetch-status-hydra"],
         queryFn: () => getStatus(),
+    });
+
+    const { data: recents, isLoading: isLoadingRecent } = useQuery({
+        queryKey: ["fetch-recent-hydra"],
+        queryFn: () => getRecent({ address: address as string }),
     });
 
     const {
@@ -410,7 +415,7 @@ export default function Dashboard() {
                                     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                                 }}
                             >
-                                <Info link={``} />
+                                <Info link={`${window.location}/tipper/${address}`} />
                             </motion.div>
                         </div>
                         <motion.div
@@ -420,7 +425,7 @@ export default function Dashboard() {
                                 visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                             }}
                         >
-                            <Recent recents={null!} isLoading={false} />
+                            <Recent recents={recents!} isLoading={isLoadingRecent} />
                         </motion.div>
                     </motion.section>
                     <motion.div
@@ -430,7 +435,7 @@ export default function Dashboard() {
                             visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
                         }}
                     >
-                        <Withdraw walletAddress={null!} />
+                        <Withdraw walletAddress={address as string} />
                     </motion.div>
                 </div>
             </motion.aside>

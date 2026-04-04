@@ -302,6 +302,7 @@ export const getRecent = async function ({ address }: { address: string }) {
         await hydraTxBuilder.initialize();
 
         const utxo = (await hydraProvider.fetchAddressUTxOs(hydraTxBuilder.spendAddress)).find((utxo) => utxo.output.plutusData);
+
         return hydraTxBuilder.convertDatum(utxo?.output.plutusData as string);
     } catch (error) {
         throw error;

@@ -3,11 +3,11 @@
 import { memo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "./icons";
-import { useQuery } from "@tanstack/react-query";
 
 import Pagination from "./pagination";
+import { useQuery } from "@tanstack/react-query";
+import { getWithdraw } from "~/services/mesh.service";
 
-// Define types for type safety
 type Withdraw = {
     type: "Withdraw";
     status: "Complete";
@@ -17,68 +17,17 @@ type Withdraw = {
     amount: string | null;
 };
 
-// Animation variants for table rows
-const rowVariants = {
-    hidden: { opacity: 0, x: -10 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-};
-
-// Animation variants for loading/error/empty states
-const stateVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: "easeOut" } },
-};
-
-const data = [
-    {
-        type: "Withdraw",
-        status: "Complete",
-        datetime: Math.floor(Date.now() / 1000) - 86400 * 3, // 3 days ago
-        txHash: "a1b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890ab",
-        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
-        amount: "5000000",
-    },
-    {
-        type: "Withdraw",
-        status: "Complete",
-        datetime: Math.floor(Date.now() / 1000) - 86400 * 2, // 2 days ago
-        txHash: "b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890bc",
-        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
-        amount: "2500000",
-    },
-    {
-        type: "Withdraw",
-        status: "Complete",
-        datetime: Math.floor(Date.now() / 1000) - 86400, // 1 day ago
-        txHash: "c3d4e5f678901234567890abcdef1234567890abcdef1234567890cd",
-        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
-        amount: "10000000",
-    },
-    {
-        type: "Withdraw",
-        status: "Complete",
-        datetime: Math.floor(Date.now() / 1000) - 3600 * 6, // 6 hours ago
-        txHash: "d4e5f678901234567890abcdef1234567890abcdef1234567890de",
-        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
-        amount: "1500000",
-    },
-    {
-        type: "Withdraw",
-        status: "Complete",
-        datetime: Math.floor(Date.now() / 1000) - 1800, // 30 minutes ago
-        txHash: "e5f678901234567890abcdef1234567890abcdef1234567890ef",
-        address: "addr_test1qp5l6m9s5v8g5k7c5z4n9u3h6j8w2y9x0a2l5f6g7h8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
-        amount: "7500000",
-    },
-];
-
 const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
+    const [page, setPage] = useState(1);
+    const { data, isLoading, error } = useQuery({
+        queryKey: ["Withdraw", walletAddress, page],
+        queryFn: () => getWithdraw({ walletAddress: walletAddress, page: page, limit: 6 }),
+    });
     const formatAmount = (amount: string | null): string => {
         if (!amount) return "0.00 ADA";
         return `${(parseInt(amount) / 1_000_000).toFixed(2)} ADA`;
     };
 
-    // Format timestamp to readable date (e.g., "12/09/2025 12:06")
     const formatDate = (timestamp: number): string => {
         return new Date(timestamp * 1000).toLocaleString("en-GB", {
             day: "2-digit",
@@ -113,7 +62,7 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
 
             <div className="mt-4">
                 <AnimatePresence mode="wait">
-                    {false ? (
+                    {isLoading ? (
                         <motion.div
                             key="loading"
                             className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-300"
@@ -132,7 +81,7 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
                             />
                             <p className="mt-4 text-base font-medium text-gray-800 dark:text-gray-200">Loading withdrawals...</p>
                         </motion.div>
-                    ) : false ? (
+                    ) : error ? (
                         <motion.div
                             key="error"
                             className="flex flex-col items-center justify-center py-12 text-red-500 dark:text-red-400"
@@ -146,7 +95,7 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
                         >
                             <p className="text-base font-medium">Error: {"Failed to load withdrawals"}</p>
                         </motion.div>
-                    ) : true ? (
+                    ) : data?.totalItem === 0 ? (
                         <motion.div
                             key="empty"
                             className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-300"
@@ -200,9 +149,9 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200 dark:bg-slate-900 dark:divide-gray-700">
-                                        {data.map((withdraw, index) => (
+                                        {data?.data.map((withdraw, index) => (
                                             <motion.tr
-                                                key={withdraw.txHash}
+                                                key={index}
                                                 className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-200"
                                                 variants={{
                                                     hidden: { opacity: 0, x: -10 },
@@ -238,14 +187,14 @@ const Withdraw = function ({ walletAddress }: { walletAddress: string }) {
                                     </tbody>
                                 </table>
                             </div>
-                            {true && (
+                            {data?.totalPages && data.totalPages > 1 && (
                                 <motion.div
                                     className="flex justify-center"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.3, delay: 0.2 }}
                                 >
-                                    <Pagination totalPages={2} currentPage={1} setCurrentPage={null!} />
+                                    <Pagination totalPages={data.totalPages} currentPage={page} setCurrentPage={setPage} />
                                 </motion.div>
                             )}
                         </motion.div>

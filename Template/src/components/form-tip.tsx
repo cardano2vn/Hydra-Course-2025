@@ -35,7 +35,17 @@ type Commit = z.infer<typeof CommitSchema>;
 type TipForm = z.infer<typeof TipSchema>;
 type Decommit = z.infer<typeof CommitSchema>;
 
-const FormTip = function ({ tipAddress, status }: { tipAddress: string; status: string }) {
+const FormTip = function ({
+    tipAddress,
+    status,
+    recents,
+    isLoadingRecent,
+}: {
+    tipAddress: string;
+    status: string;
+    recents: Array<{ address: string; amount: number }>;
+    isLoadingRecent: boolean;
+}) {
     const [amount, setAmount] = useState<string>("");
     const decommitFormRef = useRef<HTMLFormElement>(null);
     const queryClient = useQueryClient();
@@ -302,7 +312,19 @@ const FormTip = function ({ tipAddress, status }: { tipAddress: string; status: 
                             initial="initial"
                             animate="animate"
                         >
-                            {false ? "0.00" : <CountUp start={0} end={0} duration={2.75} separator=" " decimals={4} decimal="," />} ADA
+                            {isLoadingRecent ? (
+                                "0.00"
+                            ) : (
+                                <CountUp
+                                    start={0}
+                                    end={(Number(recents?.find((recent) => recent.address === address)?.amount) || 0) / DECIMAL_PLACE}
+                                    duration={2.75}
+                                    separator=" "
+                                    decimals={4}
+                                    decimal=","
+                                />
+                            )}{" "}
+                            ADA
                         </motion.p>
                     </div>
                 </div>

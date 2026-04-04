@@ -9,6 +9,7 @@ import Pagination from "./pagination";
 import Image from "next/image";
 import { images } from "~/public/images*";
 import { shortenString } from "~/lib/utils";
+import { DECIMAL_PLACE } from "~/constants/common";
 
 const Recent = function ({ recents, isLoading }: { recents: Array<{ address: string; amount: number }>; isLoading: boolean }) {
     return (
@@ -38,7 +39,7 @@ const Recent = function ({ recents, isLoading }: { recents: Array<{ address: str
 
                 <div className="mt-4 flex-1 overflow-auto">
                     <AnimatePresence mode="wait">
-                        {isLoading ? (
+                        {recents.length === 0 ? (
                             <NotFound key="not-found" />
                         ) : isLoading ? (
                             <Loading key="loading" />
@@ -138,7 +139,9 @@ const Result = function ({
                                 transition={{ delay: index * 0.1 }}
                             >
                                 <td className="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{shortenString(item.address, 20)}</td>
-                                <td className="px-4 py-3 text-center text-sm font-semibold text-green-600 dark:text-green-400">{item.amount}</td>
+                                <td className="px-4 py-3 text-center text-sm font-semibold text-green-600 dark:text-green-400">
+                                    {item.amount / DECIMAL_PLACE}
+                                </td>
                             </motion.tr>
                         ))}
                     </tbody>
