@@ -18,15 +18,13 @@
 
 ## 📌 Giới thiệu
 
-Trong bối cảnh các ứng dụng blockchain ngày càng yêu cầu tốc độ xử lý nhanh, chi phí thấp và trải nghiệm người dùng mượt mà, các giải pháp Layer 1 truyền thống thường gặp hạn chế về thông lượng và độ trễ.
+Trong bối cảnh các ứng dụng blockchain ngày càng yêu cầu tốc độ xử lý nhanh, chi phí thấp và trải nghiệm người dùng mượt mà, các giải pháp Layer 1 truyền thống thường gặp hạn chế về thông lượng và độ trễ. Hydra — giải pháp mở rộng Layer 2 của Cardano — được thiết kế để giải quyết những vấn đề này bằng cách cho phép xử lý giao dịch off-chain với hiệu năng cao, đồng thời vẫn đảm bảo tính bảo mật khi kết nối với blockchain chính. Trong tài liệu này, chúng ta sẽ mô phỏng ứng dụng TipJar — một dạng ứng dụng micropayment — nhằm minh hoạ cách Hydra có thể mang lại trải nghiệm giao dịch gần như real-time.
 
-Hydra — giải pháp mở rộng Layer 2 của Cardano — được thiết kế để giải quyết những vấn đề này bằng cách cho phép xử lý giao dịch off-chain với hiệu năng cao, đồng thời vẫn đảm bảo tính bảo mật khi kết nối với blockchain chính.
-
-Trong tài liệu này, chúng ta sẽ mô phỏng ứng dụng TipJar — một dạng ứng dụng micropayment — nhằm minh hoạ cách Hydra có thể mang lại trải nghiệm giao dịch gần như real-time. Thông qua ví dụ này, bạn sẽ hiểu rõ:
+Thông qua ví dụ này, bạn sẽ hiểu rõ:
 
 - Mô phỏng cách ứng dụng TipJar hoạt động trên Hydra với trải nghiệm giao dịch thời gian thực
 - Giới thiệu bài toán TipJar và những hạn chế khi triển khai trên blockchain truyền thống.
-- Tại sao cần Hydra để giải quyết bài toán hiệu năng và chi phí trong các ứng dụng TipJar
+- Tại sao cần Hydra để giải quyết bài toán hiệu năng và chi phí trong các ứng dụng TipJar.
 
 Ngoài ra, tài liệu cũng bao gồm phần thiết kế giao diện bằng Figma và phân tích chi tiết luồng giao dịch trong hệ thống Hydra, giúp bạn có cái nhìn toàn diện từ frontend đến backend.
 
@@ -233,7 +231,7 @@ Thực hiện kết nối ví (authentication)
 Truy cập Dashboard hoặc Tipper tùy theo vai trò
 Thực hiện các tương tác như tạo creator hoặc gửi tip
 
- Thiết kế này không chỉ giúp người mới dễ tiếp cận mà còn tối ưu trải nghiệm cho các thao tác thường xuyên, đặc biệt khi kết hợp với tốc độ xử lý gần như realtime của Hydra.
+Thiết kế này không chỉ giúp người mới dễ tiếp cận mà còn tối ưu trải nghiệm cho các thao tác thường xuyên, đặc biệt khi kết hợp với tốc độ xử lý gần như realtime của Hydra.
 
 # 👛 Cấu hình ví
 
