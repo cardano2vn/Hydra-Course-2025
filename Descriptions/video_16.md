@@ -1,44 +1,48 @@
-```mermaid
-graph TD
+### Title:
 
-    %% ===========================
-    %% LAYER 1 (CARDANO MAIN CHAIN)
-    %% ===========================
-    subgraph L1Block ["🔥 LAYER-1 — Cardano Main Chain"]
-        Main[L1<br/>📦 Chỉ ghi kết quả cuối]
-        style Main fill:#e91e63,color:white,stroke:#b0003a,stroke-width:2px
-    end
+```
+16 - Deploying and Showcasing Your Hydra DApp – Launching to the Community and Presenting Real-World Results
+```
 
-    %% ===========================
-    %% HYDRA HEADS
-    %% ===========================
-    subgraph Hydra ["⚡ HYDRA — Hàng nghìn làn giao dịch song song"]
-        H1[Head #1<br/>⚡ 10k+ TPS]
-        H2[Head #2<br/>⚡ 10k+ TPS]
-        H3[Head #3<br/>⚡ 10k+ TPS]
-        Hn[Head #n<br/>...]
-        style H1 fill:#00e676,color:black,stroke:#009624,stroke-width:2px
-        style H2 fill:#00e676,color:black,stroke:#009624,stroke-width:2px
-        style H3 fill:#00e676,color:black,stroke:#009624,stroke-width:2px
-        style Hn fill:#00e676,color:black,stroke:#009624,stroke-width:2px
-    end
+### Description:
 
-    %% ===========================
-    %% USER BLOCK
-    %% ===========================
-    User[👤 Người dùng<br/>DeFi • Game • Payment]
-    style User fill:#2979ff,color:white,stroke:#0d47a1,stroke-width:2px
+```
+Trong video này, chúng ta sẽ hoàn thiện dự án TipJar trên Hydra bằng cách trình bày toàn bộ kết quả thông qua demo thực tế và triển khai ứng dụng lên môi trường production.
 
-    %% ===========================
-    %% FLOWS
-    %% ===========================
-    User --> H1
-    User --> H2
-    User --> H3
-    User --> Hn
+Đây là bước cuối cùng trong hành trình xây dựng một Hydra DApp hoàn chỉnh — nơi tất cả các thành phần từ smart contract, off-chain logic đến frontend được kết nối và vận hành trơn tru.
 
-    H1 -->|📤 snapshot cuối| Main
-    H2 -->|📤 snapshot cuối| Main
-    H3 -->|📤 snapshot cuối| Main
-    Hn -->|📤 snapshot cuối| Main
+🎯 Nội dung chính:
+- Demo toàn bộ luồng hoạt động của ứng dụng:
+  + Người dùng gửi tip
+  + Xử lý transaction trên Hydra Head
+  + Cập nhật trạng thái realtime trên giao diện
+- Đóng gói và triển khai ứng dụng:
+  + Sử dụng Docker để build và chạy hệ thống
+  + Quản lý mã nguồn với Git
+- Deploy ứng dụng:
+  + Frontend lên Vercel
+  + Backend / Hydra services trên VPS
+- Cấu hình domain:
+  + Kết nối tên miền riêng
+  + Đưa ứng dụng lên môi trường public
+- Giới thiệu và chia sẻ ứng dụng tới cộng đồng
+
+🧠 Sau video này, bạn sẽ:
+- Biết cách đưa một Hydra DApp từ local lên production
+- Hiểu quy trình deploy full-stack blockchain app
+- Có thể tự triển khai và chia sẻ ứng dụng của mình
+- Hoàn thành end-to-end một dự án thực tế trên Cardano & Hydra
+
+🚀 Kết thúc series:
+Bạn đã đi qua toàn bộ quá trình:
+- Kiến trúc hệ thống
+- Smart contract
+- Off-chain logic
+- Tích hợp Hydra
+- Xây dựng UI realtime
+- Testing và deploy
+
+👍 Nếu series hữu ích, hãy Like – Subscribe – Share để ủng hộ kênh!
+
+#Hydra #Cardano #DApp #Deployment #Docker #Web3 #Blockchain #TipJar
 ```
