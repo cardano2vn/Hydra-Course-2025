@@ -1,4 +1,4 @@
-<div align="center">
+ <div align="center">
 
 <img src="https://www.cardano2vn.io/_next/static/media/loading.db59b266.png" width="120" alt="Hydra Logo" />
 
