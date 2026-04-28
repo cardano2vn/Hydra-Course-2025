@@ -17,414 +17,65 @@
 
 </div>
 
-## ⚡ Getting Started
+## Giới thiệu
 
-Follow these steps to set up source code locally or deploy it for production. Prerequisites: Node.js 18+, Docker, and a Cardano wallet with testnet ADA (use the [Cardano faucet](https://docs.cardano.org/cardano-testnet/faucet) for preview/testnet).
+Trong hệ sinh thái Cardano, việc tối ưu hóa hiệu suất xử lý giao dịch luôn là một bài toán quan trọng, đặc biệt khi các ứng dụng phi tập trung (DApp) ngày càng yêu cầu trải nghiệm thời gian thực và chi phí thấp. Mô hình mở rộng Layer 2 với Hydra ra đời nhằm giải quyết vấn đề này bằng cách đưa phần lớn giao dịch ra khỏi chuỗi chính, giúp tăng thông lượng và giảm độ trễ đáng kể.
 
-1. **Clone the Repository**
-
-   ```bash
-   git clone https://github.com/cardano2vn/Hydra-Course-2025.git
-   cd Code/video_12
-   ```
-
-2. **Install Dependencies**
-
-   ```bash
-   npm install
-   # Or: yarn install
-   # Or: bun install
-   ```
-
-3. **Configure Environment**
-
-   - Copy the example env file: `cp .env.example .env`
-   - Edit `.env`:
-     - `BLOCKFROST_API_KEY`: Obtain from [Blockfrost](https://blockfrost.io/).
-     - `NETWORK`: Set to `preview` (testnet) or `mainnet`.
-     - `MIN_TIP_AMOUNT`: Default is `1000000` (1 ADA in lovelace).
-     - `HYDRA_NODE_URL`: Local or remote Hydra node (e.g., `ws://localhost:4001`).
-   - For Hydra: Install and run a Hydra node (see [Hydra Docs](https://hydra.family/head-protocol/)).
-
-4. **Run Locally**
-
-   ```bash
-   npm run dev
-   ```
-
-   Access at [http://localhost:3000](http://localhost:3000). Connect a wallet, initialize a Hydra Head, and test tipping.
-
-5. **Build for Production**
-
-   ```bash
-   npm run build
-   npm start
-   ```
-
-   Optimized build served on port 3000.
-
-6. **Docker Compose**
-   ```bash
-   docker-compose up --build
-   ```
-   Launches all services (frontend, Hydra node, PostgreSQL, Nginx). Access at [http://localhost:3000](http://localhost:3000). Scale Hydra nodes with `docker-compose scale hydra-node=3` for multi-party setups.
-
-**Troubleshooting**:
-
-- **Wallet Issues**: Ensure CIP-30 compatibility and browser extensions are enabled.
-- **Hydra Errors**: Verify node sync with `hydra-node --help`. Check network alignment (preview/mainnet).
-- **Test ADA**: Request from the Cardano testnet faucet for preview network.
+Trong bối cảnh đó, smart contract đóng vai trò là lớp logic cốt lõi đảm bảo tính đúng đắn và minh bạch của hệ thống. Việc xây dựng một smart contract TipJar tối ưu bằng Aiken không chỉ giúp hiểu rõ cách vận hành của validator trên Cardano mà còn tạo nền tảng để triển khai các ứng dụng thực tế trên Hydra một cách hiệu quả hơn.
 
 ---
 
-# Viết Hợp Đồng Thông Minh Bằng Aiken
+## Mục tiêu
+
+Phần này hướng đến việc đạt được các mục tiêu chính sau:
+
+- Xây dựng smart contract TipJar được tối ưu hóa cho môi trường Hydra bằng Aiken, đảm bảo hiệu suất và tính an toàn khi xử lý giao dịch off-chain.
+- Hiểu rõ vai trò của smart contract trong kiến trúc Cardano, cũng như cách Hydra hỗ trợ mở rộng khả năng xử lý giao dịch theo thời gian thực.
+- Thực hành quy trình phát triển đầy đủ: viết mã, biên dịch và triển khai smart contract trên Cardano.
+- Kiểm thử logic on-chain bằng Aiken và công cụ mô phỏng (như Sidan hoặc môi trường test tương đương) để đảm bảo validator hoạt động chính xác trong nhiều kịch bản khác nhau.
+
+---
+
+## Xây dựng Smart Contract TipJar
+
+Trong phần này, chúng ta sẽ tập trung vào việc xây dựng một smart contract TipJar đơn giản nhưng hiệu quả, được tối ưu hóa cho môi trường Hydra. Mục tiêu là tạo ra một validator có khả năng xử lý giao dịch off-chain một cách nhanh chóng và an toàn, đồng thời đảm bảo tính đúng đắn của logic kinh doanh.
+
+### 1. Thiết kế Smart Contract
+
+Trước tiên, chúng ta sẽ xác định các yêu cầu cơ bản của TipJar:
+- Cho phép người dùng gửi tiền tip vào một địa chỉ cụ thể.
+- Cho phép chủ sở hữu rút tiền từ TipJar khi cần thiết.
+- Đảm bảo rằng chỉ chủ sở hữu mới có quyền rút tiền, trong khi bất kỳ ai cũng có thể gửi tiền.
+
+### 2. Viết Mã Smart Contract bằng Aiken
+Dưới đây là một ví dụ đơn giản về cách viết smart contract TipJar bằng Aiken:
 
 ```aiken
-use aiken/collection/list
-use aiken/crypto.{VerificationKeyHash}
-use cardano/assets.{lovelace_of}
-use cardano/transaction.{Output, OutputReference, Transaction, find_input}
-use cardano/tx.{verify_signature}
-use contract/types.{Claim, Datum, Redeemer, Tip}
-use contract/utils.{find_script_outputs}
-
-/// validators/tipjar.ak
-/// ─────────────────────────────────────────────────────────────────────────────
-/// TipJar – A Simple On-Chain Tip Jar on Cardano
-///
-/// Anyone can **tip** the jar by:
-///   • Paying at least `minimum_tip` lovelace
-///   • Adding **exactly one new message**
-///   • Preserving the owner and all previous messages
-///
-/// The **owner** (identified by `VerificationKeyHash`) can **claim** all funds by signing.
-///
-/// This validator uses:
-///   • `find_script_outputs` from `contract/utils` (custom helper)
-///   • `verify_signature` from `cardano/tx` (checks owner signature)
-/// ─────────────────────────────────────────────────────────────────────────────
-validator tipjar(owner: VerificationKeyHash, minimum_tip: Int) {
-  spend(
-    _datum_option: Option<Datum>,
-    redeemer: Redeemer,
-    output_reference: OutputReference,
-    transaction: Transaction,
-  ) {
-    let Transaction { inputs, outputs, extra_signatories, .. } = transaction
-    expect Some(script_input) = find_input(inputs, output_reference)
-    let script_address = script_input.output.address
-
-    let script_outputs = find_script_outputs(outputs, script_address)
-
-    expect list.length(script_outputs) == 1
-    expect Some(script_output) = list.head(script_outputs)
-
-    when redeemer is {
-      /// ─────────────────────────────────────────────────────────────────
-      /// Case: Tip – Anyone can add a tip
-      ///   • Must increase lovelace by at least `minimum_tip`
-      ///   • Output must go to same script address (enforced above)
-      ///   • Note: No datum check here → **vulnerable to message tampering**
-      /// ─────────────────────────────────────────────────────────────────
-      Tip ->
-        lovelace_of(script_output.value) >= lovelace_of(
-          script_input.output.value,
-        ) + minimum_tip
-
-      /// ─────────────────────────────────────────────────────────────────
-      /// Case: Claim – Owner withdraws all funds
-      ///   • `verify_signature` checks if `owner` is in `extra_signatories`
-      ///   • No output required → jar is emptied
-      ///   • Owner must sign the transaction
-      /// ─────────────────────────────────────────────────────────────────
-      Claim -> verify_signature(extra_signatories, owner)
-    }
-  }
-
-/// ───────────────────────────────────────────────────────────────────────
-  /// Reject all other spending purposes (mint, withdraw, cert, etc.)
-  /// ───────────────────────────────────────────────────────────────────────
-  else(_) {
-    fail
-  }
-}
 ```
 
-# Kiểm Tra Tính Đúng Đắn Của Hợp Đồng Thông Minh Bằng Aiken
+### 3. Kiểm thử và Triển khai
+Sau khi viết mã, chúng ta sẽ sử dụng công cụ kiểm thử của Aiken để đảm bảo rằng logic của smart contract hoạt động đúng như mong đợi. Điều này bao gồm việc mô phỏng các giao dịch gửi tiền và rút tiền, cũng như kiểm tra các trường hợp biên để đảm bảo tính an toàn.
+Sau khi kiểm thử thành công, chúng ta sẽ triển khai smart contract lên Cardano và tích hợp nó với Hydra để tận dụng khả năng mở rộng của Layer 2.
 
-## Kiểm Tra Tip Thành Công
+### 4. Tối ưu hóa cho Hydra 
 
-```aiken
-use cardano/assets.{add, from_lovelace}
-use cardano/transaction.{InlineDatum, Input, Transaction}
-use contract/types.{Claim, Datum, Tip}
-use mocktail.{
-  add_input, complete, mock_script_address, mock_script_output, mock_tx_hash,
-  mock_utxo_ref, mocktail_tx, required_signer_hash, tx_in, tx_in_inline_datum,
-  tx_out, tx_out_inline_datum,
-}
-use mocktail/virgin_address.{mock_pub_key_address}
-use mocktail/virgin_key_hash.{mock_pub_key_hash}
-use tipjar
+### 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Test: tip_accepts_valid_transaction
-//
-// Purpose: Verify that a **valid tip** (≥ minimum_tip, correct output) is accepted.
-//
-// Preconditions:
-//   • Script input: 10 ADA
-//   • Script output: 11 ADA (increase by 1 ADA)
-//   • minimum_tip = 1 ADA
-//   • Redeemer = Tip
-//   • Output goes to the **same script address**
-//   • Tipper signs the transaction
-//
-// Expected: Validator **accepts** the spend.
-// ─────────────────────────────────────────────────────────────────────────────
-test tip_accepts_valid_transaction() {
-  let redeemer = Tip
-  let datum =
-    Datum {
-      participants: [
-        (mock_pub_key_address(0, None), 10_000_000),
-        (mock_pub_key_address(1, None), 15_000_000),
-      ],
-    }
-  let output_reference = mock_utxo_ref(0, 1)
-  let tx =
-    mocktail_tx()
-      |> tx_in(
-          True,
-          mock_tx_hash(0),
-          1,
-          from_lovelace(10_000_000),
-          mock_script_address(0, None),
-        )
-      |> tx_in_inline_datum(True, datum)
-      |> tx_out(True, mock_script_address(0, None), from_lovelace(11_000_000))
-      |> required_signer_hash(True, mock_pub_key_hash(0))
-      |> complete()
 
-  tipjar.tipjar.spend(
-    mock_pub_key_hash(0),
-    1_000_000,
-    Some(datum),
-    redeemer,
-    output_reference,
-    tx,
-  )
-}
+<div align="center">
 
-```
+## 📚 **Tài liệu tham khảo**
 
-## Kiểm Tra Tip Không Đủ Tiền
+**Tóm tắt các bài học quan trọng và chuẩn bị nền tảng vững chắc để bước vào giai đoạn phát triển Hydra DApp một cách an toàn, ổn định và hiệu quả.**
 
-```aiken
-// ─────────────────────────────────────────────────────────────────────────────
-// Test: tip_rejects_insufficient_tip
-//
-// Purpose: Ensure the validator **rejects** tips below `minimum_tip`.
-//
-// Preconditions:
-//   • Input: 10 ADA
-//   • Output: 10 ADA (no increase)
-//   • minimum_tip = 1 ADA
-//   • Redeemer = Tip
-//   • Output address is correct
-//   • Tipper signs
-//
-// Expected: Validator **rejects** the transaction.
-// → This test should FAIL if run (we expect rejection), but in Aiken we
-//   can only test success paths. Use off-chain testing or negative logic.
-//   Here we keep it as a **documentation** of intended failure.
-// ─────────────────────────────────────────────────────────────────────────────
-test tip_rejects_insufficient_tip() {
-  let redeemer = Tip
-  let datum =
-    Datum {
-      participants: [
-        (mock_pub_key_address(0, None), 10_000_000),
-        (mock_pub_key_address(1, None), 15_000_000),
-      ],
-    }
-  let output_reference = mock_utxo_ref(0, 1)
-  let tx =
-    mocktail_tx()
-      |> tx_in(
-          True,
-          mock_tx_hash(0),
-          1,
-          from_lovelace(10_000_000),
-          mock_script_address(0, None),
-        )
-      |> tx_in_inline_datum(True, datum)
-      |> tx_out(True, mock_script_address(0, None), from_lovelace(10_000_000))
-      |> required_signer_hash(True, mock_pub_key_hash(0))
-      |> complete()
+<p>
 
-  tipjar.tipjar.spend(
-    mock_pub_key_hash(0),
-    1_000_000,
-    Some(datum),
-    redeemer,
-    output_reference,
-    tx,
-  )
-}
-```
+<a href="https://lms.cardano2vn.io/courses/hydra-on-cardano-complete-step-by-step-dapp-guide/lesson/introduction-to-hydra-exploring-the-future-of-cardanos-layer-2-scaling-and-practical-use-cases"><img src="https://img.shields.io/badge/LMS-Course-blue?style=for-the-badge&logo=googleclassroom"/></a>
+<a href="https://docs.google.com/presentation/d/16XjWCYfsjugHwTKSeluslssTU13uLa4v/edit?slide=id.p1#slide=id.p1"><img src="https://img.shields.io/badge/Slides-Presentation-orange?style=for-the-badge&logo=googleslides"/></a>
+<a href="https://github.com/cardano2vn/Hydra-Course-2025/tree/main/Code/video_01"><img src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github"/></a>
+<a href="https://hydra-course-2025.vercel.app/document/chapter-01/video-01"><img src="https://img.shields.io/badge/Article-Read-green?style=for-the-badge&logo=readthedocs"/></a>
+<a href="https://www.youtube.com/watch?v=3rO7EuTN3t8&t=313s"><img src="https://img.shields.io/badge/YouTube-Watch-red?style=for-the-badge&logo=youtube"/></a>
 
-## Địa Chỉ Chuyển Tiền Bị Sai
+</p>
 
-```aiken
-// ─────────────────────────────────────────────────────────────────────────────
-// Test: tip_rejects_wrong_output_address
-//
-// Purpose: Ensure the tip **must** go back to the **same script address**.
-//
-// Preconditions:
-//   • Input: script address
-//   • Output: **pubkey address** (not script)
-//   • Value increased correctly
-//   • Redeemer = Tip
-//
-// Expected: Validator **rejects** — TipJar must persist.
-// ─────────────────────────────────────────────────────────────────────────────
-test tip_but_wrong_address() {
-  let redeemer = Tip
-  let datum =
-    Datum {
-      participants: [
-        (mock_pub_key_address(0, None), 10_000_000),
-        (mock_pub_key_address(1, None), 15_000_000),
-      ],
-    }
-  let output_reference = mock_utxo_ref(0, 1)
-  let tx =
-    mocktail_tx()
-      |> tx_in(
-          True,
-          mock_tx_hash(0),
-          1,
-          from_lovelace(10_000_000),
-          mock_script_address(0, None),
-        )
-      |> tx_in_inline_datum(True, datum)
-      |> tx_out(True, mock_pub_key_address(0, None), from_lovelace(11_000_000))
-      |> required_signer_hash(True, mock_pub_key_hash(0))
-      |> complete()
-
-  tipjar.tipjar.spend(
-    mock_pub_key_hash(0),
-    1_000_000,
-    Some(datum),
-    redeemer,
-    output_reference,
-    tx,
-  )
-}
-```
-
-## Lấy Tiền Về Thành Công
-
-```aiken
-// ─────────────────────────────────────────────────────────────────────────────
-// Test: claim tips on success
-//
-// Purpose: Ensure the tip **must** go back to the **same script address**.
-//
-// Preconditions:
-//   • Input: script address
-//   • Output: **pubkey address** (not script)
-//   • Value increased correctly
-//   • Redeemer = Tip
-//
-// Expected: Validator **rejects** — TipJar must persist.
-// ─────────────────────────────────────────────────────────────────────────────
-test claim_tip_success() {
-  let redeemer = Claim
-  let datum =
-    Datum {
-      participants: [
-        (mock_pub_key_address(0, None), 10_000_000),
-        (mock_pub_key_address(1, None), 15_000_000),
-      ],
-    }
-  let output_reference = mock_utxo_ref(0, 0)
-  let transaction =
-    mocktail_tx()
-      |> tx_in(
-          True,
-          mock_tx_hash(0),
-          1,
-          from_lovelace(10_000_000),
-          mock_script_address(0, None),
-        )
-      |> tx_in_inline_datum(True, datum)
-      |> tx_out(True, mock_pub_key_address(0, None), from_lovelace(10_000_000))
-      |> required_signer_hash(True, mock_pub_key_hash(0))
-      |> complete()
-
-  tipjar.tipjar.spend(
-    mock_pub_key_hash(0),
-    1_000_000,
-    Some(datum),
-    redeemer,
-    output_reference,
-    transaction,
-  )
-}
-```
-
-## Lấy Tiền Về Nhưng Không Phải Người Sơ Hữu
-
-```aiken
-// ─────────────────────────────────────────────────────────────────────────────
-// Test: claim tips not owner
-//
-// Purpose: Ensure the tip **must** go back to the **same script address**.
-//
-// Preconditions:
-//   • Input: script address
-//   • Output: **pubkey address** (not script)
-//   • Value increased correctly
-//   • Redeemer = Tip
-//
-// Expected: Validator **rejects** — TipJar must persist.
-// ─────────────────────────────────────────────────────────────────────────────
-test claim_tip_not_owner() {
-  let redeemer = Claim
-  let datum =
-    Datum {
-      participants: [
-        (mock_pub_key_address(0, None), 10_000_000),
-        (mock_pub_key_address(1, None), 15_000_000),
-      ],
-    }
-  let output_reference = mock_utxo_ref(0, 0)
-  let transaction =
-    mocktail_tx()
-      |> tx_in(
-          True,
-          mock_tx_hash(0),
-          1,
-          from_lovelace(10_000_000),
-          mock_script_address(0, None),
-        )
-      |> tx_in_inline_datum(True, datum)
-      |> tx_out(True, mock_pub_key_address(0, None), from_lovelace(10_000_000))
-      |> required_signer_hash(True, mock_pub_key_hash(1))
-      |> complete()
-
-  tipjar.tipjar.spend(
-    mock_pub_key_hash(0),
-    1_000_000,
-    Some(datum),
-    redeemer,
-    output_reference,
-    transaction,
-  )
-}
-```
-
-# Viết Offchain Code Bằng MeshJS
+</div>
