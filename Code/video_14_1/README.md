@@ -641,73 +641,218 @@ Quá trình này là bước cuối cùng trong lifecycle của một transactio
 
 #### 🔐 3. SignIn – Web3 Authentication Core
 
-Đây là phần quan trọng nhất:
+Đây là phần quan trọng nhất trong toàn bộ luồng Web3 authentication, nơi hệ thống biến wallet blockchain thành identity chính thức của người dùng.
 
-🔗 Kết nối wallet
+##### 🔗 Kết nối wallet
+
+```ts
 BrowserWallet.enable(name.toLowerCase());
+```
 
-👉 Kết nối extension wallet (Nami, Eternl, Lace…)
+Đoạn code này thực hiện bước kết nối ứng dụng với browser extension wallet (như Nami, Eternl, Lace…) trong hệ sinh thái Cardano.
 
-🌐 Check network
+Khi hàm BrowserWallet.enable() được gọi, trình duyệt sẽ kích hoạt cơ chế yêu cầu quyền truy cập tới ví mà người dùng đã cài đặt. Lúc này, extension wallet sẽ hiển thị popup để người dùng xác nhận cho phép ứng dụng kết nối.
+
+Sau khi được chấp thuận, hệ thống sẽ khởi tạo một instance BrowserWallet, cho phép ứng dụng:
+
+truy cập địa chỉ ví của người dùng
+lấy UTxO để xây dựng transaction
+ký transaction trực tiếp từ wallet
+gửi transaction lên blockchain
+
+Việc sử dụng name.toLowerCase() đảm bảo tên wallet được chuẩn hóa đúng format mà SDK yêu cầu, tránh lỗi khi gọi extension.
+
+👉 Tóm lại: Đây là bước thiết lập kết nối giữa ứng dụng và wallet extension, đóng vai trò mở quyền truy cập blockchain cho toàn bộ các thao tác Web3 tiếp theo.
+
+##### 🌐 Check network
+
+```ts
 if (network !== APP_NETWORK_ID)
+```
 
-👉 Đảm bảo user đang ở đúng mạng (testnet/mainnet)
+Đoạn code này dùng để kiểm tra môi trường mạng (network) mà ví đang kết nối sau khi đã khởi tạo thành công BrowserWallet.
 
-🔑 Lấy address + stake
+Trong hệ sinh thái Cardano, mỗi ví có thể hoạt động trên nhiều network khác nhau như mainnet hoặc testnet. Vì vậy, việc kiểm tra network là bước bắt buộc để đảm bảo ứng dụng đang chạy đúng môi trường mà hệ thống được cấu hình.
+
+Nếu giá trị network trả về từ wallet không khớp với APP_NETWORK_ID, điều đó có nghĩa là user đang:
+
+dùng sai mạng (ví dụ: app chạy testnet nhưng wallet ở mainnet)
+hoặc chưa chuyển đúng environment trong extension wallet
+
+👉 Khi xảy ra mismatch, hệ thống thường sẽ chặn flow đăng nhập hoặc giao dịch để tránh:
+
+gửi transaction sai network
+mất tài sản do nhầm môi trường
+lỗi không thể xác nhận trên blockchain
+
+👉 Tóm lại: Đây là bước kiểm tra an toàn giúp đảm bảo ví người dùng đang hoạt động trên đúng blockchain network mà ứng dụng yêu cầu, từ đó tránh sai lệch dữ liệu và lỗi giao dịch trong toàn bộ hệ thống Web3.
+
+##### 🔑 Lấy address + stake
+
+```ts
 const address = await browserWallet.getChangeAddress();
 const stakeList = await browserWallet.getRewardAddresses();
+```
 
-👉 Xác định identity blockchain của user
+Đoạn code này được sử dụng để trích xuất danh tính blockchain của người dùng (on-chain identity) sau khi ví đã được kết nối thành công.
 
-🔏 Wallet signature authentication
+Cụ thể, getChangeAddress() trả về địa chỉ chính của ví (base address), đây là địa chỉ được dùng để nhận và gửi ADA trong các giao dịch thông thường. Trong khi đó, getRewardAddresses() trả về danh sách stake/reward addresses, đại diện cho quyền staking của người dùng trong hệ sinh thái Cardano.
+
+Thông qua hai giá trị này, hệ thống có thể xác định rõ:
+
+danh tính chính của user trên blockchain (address)
+quyền staking và reward liên quan đến ví (stakeAddress)
+mối liên kết giữa wallet và identity trong dApp
+
+Trong kiến trúc Web3, các địa chỉ này không chỉ dùng để giao dịch mà còn đóng vai trò như identity layer phi tập trung, thay thế hoàn toàn username/password truyền thống.
+
+👉 Tóm lại: Đây là bước xác định danh tính blockchain của người dùng, nơi hệ thống lấy address và stake address để định danh user trong toàn bộ ứng dụng Web3.
+
+##### 🔏 Wallet signature authentication
+
+```ts
 const { data } = await getNonceAddress(address);
 const signature = await browserWallet.signData(data);
+```
 
-👉 Đây là bước chứng minh ownership wallet
+Đoạn code này thực hiện bước xác thực quyền sở hữu ví (proof of ownership) trong luồng đăng nhập Web3, đóng vai trò tương đương với việc “login bằng password” trong hệ thống truyền thống.
 
-🔐 Login NextAuth
+Trước hết, getNonceAddress(address) sẽ gọi backend để tạo ra một nonce (chuỗi dữ liệu ngẫu nhiên, dùng một lần) gắn với địa chỉ ví của người dùng. Nonce này giúp đảm bảo rằng mỗi lần đăng nhập đều là duy nhất, tránh bị replay attack hoặc giả mạo chữ ký cũ.
+
+Sau đó, browserWallet.signData(data) sẽ yêu cầu ví của người dùng ký trực tiếp lên dữ liệu nonce đó bằng private key. Quá trình ký này diễn ra hoàn toàn trong wallet extension, không lộ private key ra ngoài, đảm bảo tính bảo mật tuyệt đối.
+
+Kết quả trả về là một chữ ký số (signature) có thể dùng để:
+
+chứng minh user thực sự sở hữu địa chỉ ví đó
+xác thực danh tính mà không cần password
+tạo nền tảng cho login Web3 bằng wallet
+chống giả mạo và replay attack
+
+👉 Tóm lại:
+
+Đây là bước xác thực cốt lõi trong Web3 authentication, nơi người dùng chứng minh quyền sở hữu ví bằng cách ký nonce, thay thế hoàn toàn cơ chế username/password truyền thống bằng chữ ký mật mã trên blockchain identity.
+
+##### 🔐 Login NextAuth
+
+```ts
 await signIn("credentials", {
-data: JSON.stringify({
-wallet: name,
-address: address,
-}),
+    data: JSON.stringify({
+        wallet: name,
+        address: address,
+    }),
 });
+```
 
-👉 Biến wallet thành identity trong hệ thống Web2 session
+Đoạn code này thực hiện bước đăng nhập người dùng vào hệ thống NextAuth sau khi đã xác thực ví thành công, biến ví blockchain trở thành một identity chính thức trong hệ thống session Web2.
 
-👉 Tóm lại flow:
+Sau khi user đã kết nối wallet và ký nonce để chứng minh quyền sở hữu, hệ thống sẽ gọi signIn("credentials") để tạo session đăng nhập. Thay vì sử dụng email hoặc password như hệ thống truyền thống, dữ liệu xác thực ở đây được thay thế hoàn toàn bằng thông tin từ ví blockchain.
 
-connect wallet
-verify network
-sign nonce
-login NextAuth
-sync state vào Zustand
-🔄 4. Sync session → wallet
+Cụ thể, payload được gửi lên bao gồm:
+
+- wallet: tên loại ví (ví dụ Nami, Eternl, Lace)
+- address: Cardano address của người dùng
+
+Thông tin này sẽ được NextAuth xử lý ở phía server để tạo JWT session, từ đó định danh user xuyên suốt toàn bộ ứng dụng.
+
+👉 Ý nghĩa quan trọng của bước này:
+
+- chuyển authentication từ Web3 (wallet) sang Web2 session layer (NextAuth)
+- tạo session bền vững cho frontend sử dụng useSession()
+- giúp ứng dụng hoạt động như Web2 nhưng identity lại đến từ blockchain
+- đóng vai trò “cầu nối” giữa wallet-based login và hệ thống session-based architecture
+
+👉 Tóm lại: Đây là bước biến ví blockchain thành một identity trong hệ thống NextAuth session, giúp kết hợp Web3 authentication với Web2 session management để tạo trải nghiệm đăng nhập liền mạch và thống nhất trong toàn bộ ứng dụng.
+
+#### 🔄 4. Sync session → wallet
+
+```ts
 syncWithSession: async (session) => { ... }
-Ý nghĩa:
-nếu session tồn tại → restore wallet connection
-nếu session sai → reset state
-retry nếu wallet extension chưa sẵn sàng
+```
 
-👉 Đây là auto rehydration layer
+Hàm syncWithSession được sử dụng để đồng bộ trạng thái giữa session (NextAuth) và wallet (Web3), đảm bảo rằng khi người dùng reload trang hoặc quay lại ứng dụng, hệ thống có thể tự động khôi phục lại trạng thái đăng nhập và kết nối ví mà không cần thao tác lại từ đầu.
 
-🔁 5. useWalletSync hook
+Cụ thể, cơ chế hoạt động như sau:
+
+- Nếu session tồn tại và hợp lệ, hệ thống sẽ tự động restore lại kết nối với browser wallet dựa trên thông tin đã lưu (như wallet name và address), từ đó khôi phục toàn bộ trạng thái Web3 của user.
+- Nếu session không hợp lệ hoặc không còn tồn tại, hệ thống sẽ reset toàn bộ state liên quan đến wallet để tránh tình trạng dữ liệu bị “treo” hoặc không đồng bộ.
+- Trong trường hợp wallet extension chưa sẵn sàng (ví dụ chưa inject kịp vào browser), hệ thống sẽ retry nhiều lần với delay để đảm bảo kết nối được thiết lập ổn định.
+
+Về mặt kiến trúc, đây được xem là một auto rehydration layer, giúp đồng bộ lại toàn bộ trạng thái giữa session Web2 và wallet Web3 sau mỗi lần reload hoặc khởi động lại ứng dụng.
+
+👉 Tóm lại: syncWithSession đảm bảo rằng trạng thái wallet luôn được khôi phục chính xác từ session, giúp trải nghiệm người dùng liền mạch và tránh mất kết nối giữa authentication layer và Web3 wallet layer.
+
+#### 🔁 5. useWalletSync hook
+
+```ts
 React.useEffect(() => {
-if (session) {
-setTimeout(() => syncWithSession(session), 1000);
-} else {
-syncWithSession(session);
-}
+    if (session) {
+        setTimeout(() => syncWithSession(session), 1000);
+    } else {
+        syncWithSession(session);
+    }
 }, [session]);
+```
 
-👉 Tự động sync wallet mỗi khi session thay đổi
+Hook useWalletSync được thiết kế để tự động đồng bộ trạng thái wallet mỗi khi session của người dùng thay đổi, đảm bảo hệ thống luôn giữ được sự nhất quán giữa authentication layer (NextAuth) và Web3 wallet layer.
 
-🔌 6. Disconnect
+Cụ thể, khi session thay đổi:
+
+- Nếu session tồn tại, hệ thống sẽ trì hoãn 1 giây trước khi gọi syncWithSession(session). Khoảng delay này giúp đảm bảo wallet extension đã sẵn sàng và tránh lỗi do trạng thái chưa được hydrate đầy đủ sau khi login hoặc reload trang.
+- Nếu session không tồn tại (user logout), hệ thống sẽ gọi syncWithSession(session) ngay lập tức để reset toàn bộ trạng thái wallet, đảm bảo không còn dữ liệu cũ bị giữ lại.
+
+Cơ chế này giúp ứng dụng luôn tự động phản ứng với thay đổi authentication mà không cần user can thiệp thủ công, đồng thời giữ cho trạng thái wallet luôn đồng bộ với session hiện tại.
+
+👉 Tóm lại: useWalletSync là cơ chế tự động đồng bộ wallet theo session, giúp đảm bảo tính nhất quán giữa Web2 authentication và Web3 wallet trong toàn bộ vòng đời của ứng dụng.
+
+#### 🔌 6. Disconnect
+
+```ts
 disconnect: async () => {
-set({ browserWallet: null!, wallet: null! });
-}
+    set({ browserWallet: null!, wallet: null! });
+};
+```
 
-👉 Reset toàn bộ trạng thái Web3 khi logout
+Hàm disconnect được sử dụng để reset toàn bộ trạng thái liên quan đến Web3 wallet trong ứng dụng, thường được gọi khi người dùng logout hoặc khi session không còn hợp lệ.
+
+Cụ thể, khi hàm này được thực thi, hệ thống sẽ: xóa instance browserWallet, ngắt kết nối với wallet extension, reset wallet về trạng thái null, loại bỏ metadata của ví, giải phóng toàn bộ trạng thái Web3 đang lưu trong Zustand store
+
+Điều này đảm bảo rằng không còn bất kỳ dữ liệu hoặc kết nối nào từ phiên đăng nhập trước đó được giữ lại, tránh các lỗi như: sử dụng sai wallet sau khi logout, giữ trạng thái kết nối cũ không hợp lệ, mismatch giữa session Web2 và wallet Web3
+
+Về mặt kiến trúc, đây là bước cleanup quan trọng trong vòng đời authentication, giúp hệ thống luôn bắt đầu lại từ trạng thái sạch mỗi khi người dùng đăng xuất.
+
+👉 Tóm lại: disconnect đảm nhiệm việc xóa toàn bộ trạng thái Web3, đảm bảo hệ thống luôn đồng bộ với trạng thái authentication và tránh rò rỉ hoặc xung đột dữ liệu giữa các phiên người dùng.
+
+
+## Viết Login trên giao diện
+
+Đoạn code này là một component React (Next.js client component) dùng để xử lý luồng tương tác với ví (wallet), bao gồm các bước: kiểm tra ví đã cài đặt chưa (isDownload), kiểm tra ví đã được bật quyền chưa (isEnable), sau đó cho phép người dùng thực hiện các hành động như tải ví, enable ví hoặc đăng nhập (sign in) thông qua ví.
+
+Trước hết, component nhận vào wallet và session từ props, đồng thời sử dụng hook useWallet() để lấy hàm signIn. Hai state chính được dùng là isEnable và isDownload để theo dõi trạng thái của ví:
+
+```ts
+const { signIn } = useWallet();
+const [isEnable, setIsEnable] = useState<boolean>(false);
+const [isDownload, setIsDownload] = useState<boolean>(false);
+```
+
+Sau đó, component sử dụng useEffect để kiểm tra xem ví đã được cài đặt chưa thông qua hàm wallet.isDownload():
+
+```ts
+useEffect(() => {
+    (async function () {
+        try {
+            if (wallet?.isDownload) {
+                setIsDownload(await wallet?.isDownload());
+            } else {
+                setIsDownload(false);
+            }
+        } catch (_) {
+            setIsDownload(false);
+        }
+    })();
+}, []);
+```
+
 
 <div align="center">
 
