@@ -52,6 +52,188 @@ Cuối cùng, sau phần này, bạn sẽ có nền tảng vững chắc để p
 
 ## Xây dựng các hàm để hiển thị thông tin ví.
 
+Trong phần này, chúng ta xây dựng một component phía frontend để hiển thị thông tin ví của người dùng, bao gồm địa chỉ ví, số dư ADA, stake address và một số thao tác như copy, logout. Đây là phần quan trọng trong trải nghiệm người dùng của một DApp, giúp người dùng dễ dàng theo dõi tài sản và trạng thái ví của mình.
+
+Component Account được viết dưới dạng "use client" để đảm bảo chạy ở phía client, vì nó cần tương tác trực tiếp với wallet extension thông qua hook useWallet.
+
+### 1. Lấy thông tin ví từ useWallet
+
+```ts
+const { wallet, browserWallet, address, stakeAddress } = useWallet();
+```
+
+Trong ứng dụng DApp, việc kết nối và lấy thông tin từ ví người dùng là bước nền tảng để thực hiện mọi thao tác liên quan đến blockchain. Ở đây, chúng ta sử dụng hook useWallet để truy cập và quản lý trạng thái của ví ngay trong frontend.
+
+Hook useWallet đóng vai trò như một lớp abstraction (trừu tượng hóa), giúp bạn không cần làm việc trực tiếp với API phức tạp của từng loại ví, mà chỉ cần gọi một interface thống nhất để lấy dữ liệu và thực hiện hành động.
+
+Các giá trị được cung cấp từ useWallet
+
+1. wallet – Thông tin ví
+
+Đây là object chứa metadata của ví mà người dùng đang kết nối, ví dụ như; Tên ví (Eternl, Lace, Nami,…), Icon hiển thị trên UI
+
+Thông tin này thường được dùng để hiển thị giao diện, giúp người dùng biết họ đang kết nối với ví nào. Ví dụ, bạn có thể hiển thị logo ví bên cạnh địa chỉ để tăng độ tin cậy và trải nghiệm người dùng.
+
+2. browserWallet – Instance để tương tác với ví
+
+Đây là thành phần quan trọng nhất, vì nó cho phép bạn gọi các hàm trực tiếp đến wallet extension. Thông qua browserWallet, bạn có thể: Lấy số dư (getBalance()), Lấy danh sách UTXO, Ký transaction (signTx()), Submit transaction
+
+Nói cách khác, browserWallet chính là “cầu nối kỹ thuật” giữa ứng dụng và blockchain, nhưng thông qua ví của người dùng. Mọi hành động như gửi tiền hay ký giao dịch đều phải đi qua bước này để đảm bảo tính bảo mật (private key luôn nằm trong ví, không bao giờ lộ ra ngoài).
+
+3. address – Địa chỉ ví chính
+
+Đây là địa chỉ ví dùng để: Nhận ADA hoặc token, Hiển thị trên UI, Gửi vào backend để lưu trữ hoặc xử lý logic
+
+Trong giao diện, địa chỉ này thường được rút gọn (ví dụ: addr1...xyz) để dễ nhìn, nhưng bên trong hệ thống vẫn sử dụng đầy đủ để đảm bảo chính xác.
+
+4. stakeAddress – Địa chỉ stake
+
+Đây là địa chỉ dùng cho staking và nhận phần thưởng staking trên Cardano. Trong nhiều trường hợp, stakeAddress được sử dụng để: Xác định danh tính người dùng (thay vì address, vì address có thể thay đổi). Theo dõi phần thưởng staking. Gắn với profile hoặc account trong hệ thống. Việc tách biệt address và stakeAddress là một đặc điểm quan trọng của Cardano mà bạn cần hiểu rõ khi xây dựng DApp.
+
+Vai trò của useWallet trong hệ thống: Hook useWallet không chỉ đơn giản là trả về dữ liệu, mà còn đóng vai trò là cầu nối giữa frontend và các ví như Eternl hoặc Lace.
+
+Cụ thể
+
+- Nó quản lý trạng thái kết nối ví (connected / disconnected)
+- Đồng bộ dữ liệu ví khi người dùng thay đổi account
+- Cung cấp API thống nhất để tương tác với nhiều loại ví khác nhau
+
+Nhờ đó, bạn có thể viết code một lần nhưng sử dụng được với nhiều wallet, thay vì phải xử lý riêng cho từng loại extension.
+
+### 2. Lấy số dư ví (balance)
+
+```ts
+useEffect(() => {
+    (async function () {
+        if (browserWallet) {
+            try {
+                const balance = await browserWallet.getBalance();
+                setBalance(Number(balance[0].quantity));
+            } catch (_) {
+                setTimeout(async () => {
+                    try {
+                        const balance = await browserWallet.getBalance();
+                        setBalance(Number(balance[0].quantity));
+                    } catch (_) {}
+                }, 2000);
+            }
+        } else {
+            setBalance(0);
+        }
+    })();
+}, [wallet, browserWallet]);
+```
+
+Đoạn code trên sử dụng useEffect để tự động lấy số dư ví mỗi khi trạng thái ví thay đổi (cụ thể là khi wallet hoặc browserWallet thay đổi). Đây là một pattern rất phổ biến trong các DApp, nhằm đảm bảo dữ liệu hiển thị luôn được cập nhật theo trạng thái thực tế của ví người dùng.
+
+Khi component được render hoặc khi người dùng kết nối/chuyển ví, useEffect sẽ được kích hoạt. Bên trong, một hàm async được gọi ngay lập tức để xử lý việc lấy dữ liệu.
+
+Trước tiên, hệ thống kiểm tra xem browserWallet có tồn tại hay không. Nếu chưa có (tức là người dùng chưa kết nối ví), hệ thống sẽ set balance = 0 để tránh hiển thị dữ liệu sai.
+
+Nếu browserWallet đã sẵn sàng, hàm sẽ gọi:
+
+```ts
+const balance = await browserWallet.getBalance();
+```
+
+Hàm getBalance() trả về danh sách các asset trong ví, trong đó mỗi phần tử bao gồm:
+
+- unit: loại tài sản (ví dụ: lovelace, token, NFT,…)
+- quantity: số lượng tương ứng
+
+Trong hầu hết các trường hợp cơ bản, phần tử đầu tiên (balance[0]) chính là ADA (đơn vị lovelace). Vì vậy, ta lấy: để convert từ string sang number và lưu vào state balance.
+
+```ts
+Number(balance[0].quantity);
+```
+
+Một điểm rất quan trọng trong đoạn code này là cơ chế retry:
+
+```ts
+setTimeout(async () => {
+    try {
+        const balance = await browserWallet.getBalance();
+        setBalance(Number(balance[0].quantity));
+    } catch (_) {}
+}, 2000);
+```
+
+Trong thực tế, việc gọi getBalance() không phải lúc nào cũng thành công ngay lần đầu. Một số nguyên nhân phổ biến:
+
+- Người dùng vừa connect ví → extension chưa kịp khởi tạo
+- Wallet chưa sync xong dữ liệu
+- Extension phản hồi chậm (đặc biệt trên mạng yếu)
+
+Nếu không xử lý trường hợp này, UI có thể:
+
+- Hiển thị số dư = 0 (sai)
+- Hoặc bị lỗi và không hiển thị gì
+
+Việc retry sau 2 giây giúp hệ thống “chờ” ví sẵn sàng rồi thử lại, từ đó tăng độ ổn định của ứng dụng mà không cần reload trang.
+
+### 3. Hiển thị thông tin ví (UI chính)
+
+Phần PopoverTrigger đóng vai trò là giao diện hiển thị nhanh (compact view) của ví người dùng. Đây là khu vực mà người dùng nhìn thấy đầu tiên sau khi kết nối ví, vì vậy cần đảm bảo vừa đầy đủ thông tin, vừa gọn gàng và dễ đọc.
+
+Cụ thể, phần này hiển thị 3 thành phần chính:
+
+- Icon ví → giúp nhận diện loại ví (Eternl, Lace,…)
+- Địa chỉ ví (rút gọn) → tránh hiển thị chuỗi quá dài
+- Số dư ADA → thông tin quan trọng nhất
+
+```ts
+<CountUp
+    start={0}
+    end={Number((balance / DECIMAL_PLACE).toFixed(6))}
+    decimals={6}
+/> ₳
+
+```
+
+Phần PopoverTrigger đóng vai trò là giao diện hiển thị nhanh của ví người dùng, nơi cung cấp các thông tin quan trọng nhưng được trình bày một cách gọn gàng và dễ nhìn. Tại đây, người dùng có thể thấy ngay icon của ví để nhận diện loại ví đang sử dụng, địa chỉ ví đã được rút gọn bằng hàm shortenString để tránh hiển thị chuỗi quá dài, và đặc biệt là số dư ADA – thông tin được quan tâm nhiều nhất.
+
+Số dư được hiển thị thông qua component CountUp, giúp tạo hiệu ứng đếm từ 0 đến giá trị thực tế, mang lại cảm giác trực quan và sinh động hơn so với việc hiển thị số tĩnh. Tuy nhiên, cần lưu ý rằng dữ liệu lấy từ ví ban đầu ở dạng lovelace (đơn vị nhỏ nhất của ADA), nên trước khi hiển thị, cần chuyển đổi sang ADA bằng cách chia cho DECIMAL_PLACE = 1_000_000. Sau đó, sử dụng .toFixed(6) để giới hạn tối đa 6 chữ số thập phân, giúp số liệu hiển thị rõ ràng, dễ đọc và phù hợp với tiêu chuẩn của các ứng dụng blockchain.
+
+Việc rút gọn địa chỉ ví cũng đóng vai trò quan trọng trong việc cải thiện giao diện, vì địa chỉ Cardano thường rất dài. Bằng cách chỉ hiển thị một phần đầu và cuối, người dùng vẫn có thể nhận diện ví của mình mà không làm ảnh hưởng đến bố cục tổng thể. Tổng thể, phần UI này tuy đơn giản nhưng được thiết kế để cân bằng giữa tính chính xác của dữ liệu và trải nghiệm người dùng, giúp người dùng nhanh chóng nắm bắt thông tin ví ngay trên giao diện chính của ứng dụng.
+
+### 4. Hiển thị chi tiết trong Popover
+
+Khi người dùng click vào PopoverTrigger, phần PopoverContent sẽ được hiển thị để cung cấp thông tin chi tiết hơn về ví. Đây là nơi mở rộng từ giao diện rút gọn sang đầy đủ, giúp người dùng có thể xem và thao tác với các thông tin quan trọng một cách thuận tiện.
+
+Trong phần này, hệ thống hiển thị tên ví (ví dụ: Eternl), network hiện tại (APP_NETWORK) để người dùng biết mình đang hoạt động trên môi trường nào (Preview, Preprod hay Mainnet), cùng với các thông tin địa chỉ như address và stakeAddress. Việc hiển thị rõ ràng các loại địa chỉ này rất quan trọng trong Cardano, vì mỗi loại phục vụ một mục đích khác nhau như nhận tiền hoặc staking.
+
+Bên cạnh đó, mỗi địa chỉ đều đi kèm với một nút copy thông qua component:
+
+Ví dụ: `<Copy content={address as string} />`. Giúp người dùng dễ dàng copy địa chỉ mà không cần thao tác thủ công.
+
+Chức năng này giúp người dùng sao chép địa chỉ chỉ với một click, thay vì phải bôi đen và copy thủ công. Đây là một cải tiến nhỏ nhưng mang lại trải nghiệm người dùng tốt hơn, đặc biệt trong các ứng dụng blockchain nơi địa chỉ ví thường dài và khó thao tác.
+
+Tổng thể, PopoverContent đóng vai trò là khu vực hiển thị thông tin chi tiết và cung cấp các thao tác nhanh, giúp người dùng kiểm soát và sử dụng ví một cách dễ dàng và chính xác hơn.
+
+### 5. Các chức năng bổ sung
+
+Ngoài việc hiển thị thông tin ví, component còn tích hợp thêm một số chức năng hỗ trợ nhằm cải thiện trải nghiệm người dùng. Cụ thể, các mục Feedback và Help được cung cấp dưới dạng các liên kết, cho phép người dùng nhanh chóng truy cập đến trang hỗ trợ hoặc gửi phản hồi khi gặp vấn đề trong quá trình sử dụng. Đây là những yếu tố quan trọng giúp tăng tính tương tác và hỗ trợ người dùng tốt hơn trong các ứng dụng thực tế.
+
+Bên cạnh đó, chức năng Logout cũng được tích hợp thông qua hàm signOut() từ NextAuth:
+
+```ts
+<Button onClick={() => signOut()}>
+Log out
+</Button>
+```
+
+Khi người dùng nhấn vào nút này, hệ thống sẽ thực hiện đăng xuất và xoá trạng thái phiên làm việc hiện tại. Điều này đặc biệt cần thiết trong các ứng dụng có xác thực, giúp đảm bảo tính bảo mật và cho phép người dùng chuyển đổi tài khoản một cách dễ dàng.
+
+### 6. Trải nghiệm người dùng (UX)
+
+Component Account được thiết kế với nhiều điểm tối ưu nhằm mang lại trải nghiệm tốt nhất cho người dùng. Trước hết, việc rút gọn địa chỉ ví giúp giao diện trở nên gọn gàng, dễ nhìn mà vẫn giữ được khả năng nhận diện. Số dư ADA được hiển thị kèm animation giúp tăng tính trực quan và tạo cảm giác “sống” cho dữ liệu.
+
+Ngoài ra, chức năng copy nhanh địa chỉ giúp người dùng thao tác thuận tiện hơn, đặc biệt khi làm việc với các chuỗi ký tự dài. Component cũng tự động cập nhật khi người dùng thay đổi ví hoặc kết nối lại, đảm bảo dữ liệu luôn chính xác mà không cần reload trang.
+
+Cuối cùng, việc hỗ trợ dark mode giúp giao diện phù hợp với nhiều điều kiện sử dụng khác nhau, đồng thời mang lại sự nhất quán với các thiết kế hiện đại.
+
+Tổng thể, những cải tiến này tuy nhỏ nhưng góp phần quan trọng trong việc nâng cao trải nghiệm người dùng, giúp ứng dụng trở nên thân thiện, dễ sử dụng và chuyên nghiệp hơn.
+
 ---
 
 ## Hướng dẫn cài đặt và cấu hình Prisma.
@@ -223,7 +405,7 @@ Sau khi hoàn tất bước này, bạn đã sẵn sàng sử dụng Prisma Clie
 
 ---
 
-### Viết các hàm để tương tác với Prisma.
+## Viết các hàm để tương tác với Prisma.
 
 Sau khi đã cấu hình Prisma và khởi tạo Prisma Client, bước tiếp theo là xây dựng các hàm để thao tác với dữ liệu trong database. Đây chính là tầng logic backend giúp ứng dụng có thể tạo, truy vấn và quản lý dữ liệu một cách hiệu quả.
 
@@ -393,7 +575,7 @@ Tóm lại, việc lựa chọn deleteMany trong trường hợp này giúp hệ
 
 ---
 
-### Viết các hàm để làm việc với Cardano Layer 1.
+## Viết các hàm để làm việc với Cardano Layer 1.
 
 Trong phần này, chúng ta xây dựng các hàm để tương tác trực tiếp với Cardano Layer 1 thông qua thư viện Mesh SDK và dịch vụ Blockfrost. Đây là tầng quan trọng giúp ứng dụng có thể gửi transaction, truy vấn UTXO và đọc lịch sử giao dịch từ blockchain một cách an toàn và hiệu quả.
 
@@ -582,7 +764,486 @@ Cuối cùng, trả về kết quả bao gồm: data: danh sách withdraw, total
 
 ### Viết các hàm để tương tác và làm việc với Hydra.
 
+Trong phần này, chúng ta xây dựng các hàm để làm việc với Hydra – giải pháp Layer 2 của Cardano giúp xử lý giao dịch nhanh hơn với chi phí thấp hơn. Thay vì gửi mọi transaction lên Layer 1, Hydra cho phép các bên tham gia mở một “Head” và thực hiện giao dịch off-chain, sau đó mới đồng bộ lại lên blockchain. Các hàm dưới đây sử dụng Mesh SDK kết hợp với Hydra thông qua HydraProvider và một lớp builder tùy chỉnh (HydraTxBuilder) để đóng gói logic phức tạp.
+
+### 1. Hàm commit – Nạp UTXO vào Hydra Head
+
+Hàm commit được sử dụng để đưa một UTXO từ Cardano Layer 1 vào Hydra Head, từ đó cho phép tài sản này được sử dụng trong môi trường Layer 2 với tốc độ xử lý nhanh hơn và chi phí thấp hơn. Đây là bước đầu tiên và rất quan trọng khi bắt đầu tương tác với Hydra, vì chỉ những tài sản đã được commit vào Head mới có thể tham gia các giao dịch off-chain.
+
+```ts
+export const commit = async function ({ address, utxo, isCreator = false }: { address: string; utxo: UTxO; isCreator: boolean }) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: address,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        if ((await getStatus()) === "IDLE") {
+            await hydraTxBuilder.init();
+        }
+
+        if ((await getStatus()) === "OPEN") {
+            return await hydraTxBuilder.deposit({
+                utxo: utxo,
+            });
+        }
+
+        return await hydraTxBuilder.commit({ utxo });
+    } catch (error) {
+        throw error;
+    }
+};
+```
+
+Luồng xử lý của hàm này bắt đầu bằng việc khởi tạo MeshWallet thông qua Mesh SDK để tương tác với Layer 1, đồng thời tạo HydraProvider để kết nối đến Hydra node tương ứng. Sau đó, HydraTxBuilder được sử dụng như một lớp trung gian giúp đóng gói toàn bộ logic xây dựng transaction, giúp code trở nên rõ ràng và dễ quản lý hơn.
+
+Sau khi gọi initialize() để thiết lập trạng thái ban đầu, hàm sẽ kiểm tra trạng thái hiện tại của Hydra thông qua getStatus(). Đây là bước rất quan trọng vì Hydra hoạt động theo mô hình state machine. Nếu trạng thái là IDLE, nghĩa là Head chưa được khởi tạo, hệ thống sẽ gọi init() để mở Head. Nếu trạng thái là OPEN, tức là Head đã hoạt động, lúc này việc nạp thêm tài sản sẽ sử dụng deposit() để đưa UTXO vào Head một cách trực tiếp. Trong các trường hợp còn lại, hàm sẽ thực hiện commit() để đưa UTXO vào Hydra theo đúng quy trình.
+
+Điểm cần lưu ý là mỗi hành động trong Hydra đều phụ thuộc vào trạng thái hiện tại của Head (IDLE → OPEN → CLOSED → FANOUT). Vì vậy, việc kiểm tra trạng thái trước khi thực hiện là bắt buộc để tránh lỗi và đảm bảo giao dịch được xử lý đúng cách. Hàm commit không chỉ đơn thuần là một thao tác nạp tài sản, mà còn thể hiện cách kiểm soát luồng logic khi làm việc với Hydra trong thực tế.
+
+### 2. Hàm decommit – Rút UTXO khỏi Hydra
+
+Hàm decommit được sử dụng để rút một UTXO từ Hydra Head về lại Cardano Layer 1. Đây là bước ngược lại với commit, cho phép người dùng đưa tài sản từ môi trường Layer 2 quay trở lại blockchain chính. Trong quá trình này, hệ thống cần đảm bảo rằng UTXO thực sự tồn tại trong Hydra và Head đang ở trạng thái hợp lệ để thực hiện thao tác rút.
+
+```ts
+export const decommit = async function ({ address, utxo, isCreator = false }: { address: string; utxo: UTxO; isCreator: boolean }) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: address,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        const utxos = await hydraProvider.fetchUTxOs(utxo.input.txHash, utxo.input.outputIndex);
+
+        if (!utxos || utxos.length === 0 || hydraProvider.getStatus() !== "OPEN") {
+            throw new Error("Cannot Decommit UTxO.");
+        }
+
+        return await hydraTxBuilder.decommit({ utxo });
+    } catch (error) {
+        throw error;
+    }
+};
+```
+
+Luồng xử lý của hàm bắt đầu tương tự như các hàm khác: khởi tạo MeshWallet, HydraProvider và HydraTxBuilder để thiết lập môi trường làm việc với Hydra. Sau khi gọi initialize(), hệ thống tiến hành kiểm tra tính hợp lệ của UTXO cần rút.
+
+Cụ thể, hàm sử dụng hydraProvider.fetchUTxOs(txHash, outputIndex) để truy vấn xem UTXO đó có thực sự tồn tại trong trạng thái hiện tại của Hydra hay không. Đây là bước rất quan trọng, vì nếu UTXO không tồn tại (ví dụ đã bị tiêu thụ trước đó), việc decommit sẽ thất bại.
+
+Tiếp theo, hệ thống kiểm tra trạng thái của Hydra Head thông qua hydraProvider.getStatus(). Chỉ khi trạng thái là OPEN thì việc rút tài sản mới được phép thực hiện. Nếu một trong hai điều kiện không thỏa mãn (UTXO không tồn tại hoặc Head không ở trạng thái OPEN), hàm sẽ throw lỗi để ngăn chặn hành động không hợp lệ.
+
+Khi tất cả điều kiện đều hợp lệ, hàm sẽ gọi hydraTxBuilder.decommit({ utxo }) để thực hiện giao dịch rút tài sản. Lúc này, UTXO sẽ được chuyển từ Hydra về lại Layer 1 theo đúng quy trình của hệ thống.
+
+Tóm lại, hàm decommit không chỉ thực hiện việc rút tài sản mà còn đảm bảo tính an toàn bằng cách kiểm tra đầy đủ trạng thái của Hydra và sự tồn tại của UTXO. Đây là bước quan trọng để tránh lỗi và đảm bảo tính nhất quán giữa Layer 2 và Layer 1 trong quá trình vận hành DApp.
+
+### 3. Hàm tip – Gửi tip trong Hydra
+
+Hàm tip được sử dụng để gửi một khoản ADA (tip) từ người dùng đến một địa chỉ khác bên trong Hydra Head. Đây là một trong những use case phổ biến khi xây dựng các ứng dụng như TipJar, payment system hoặc reward mechanism trên Hydra.
+
+```ts
+export const tip = async function ({
+    tipAddress,
+    address,
+    amount,
+    isCreator = false,
+}: {
+    tipAddress: string;
+    address: string;
+    amount: number;
+    isCreator: boolean;
+}) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: tipAddress,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        return await hydraTxBuilder.tip({ amount: String(amount) });
+    } catch (error) {
+        throw error;
+    }
+};
+```
+
+Khác với các giao dịch trên Layer 1, điểm đặc biệt của hàm tip là toàn bộ quá trình gửi tiền diễn ra off-chain bên trong Hydra Head. Điều này có nghĩa là giao dịch không cần được submit lên blockchain chính ngay lập tức, mà chỉ được xử lý giữa các participant trong Hydra. Nhờ đó, tốc độ xử lý gần như real-time, đồng thời chi phí giao dịch cũng rất thấp so với Layer 1.
+
+Luồng xử lý của hàm bắt đầu bằng việc khởi tạo MeshWallet và HydraProvider, tương tự như các hàm trước. Sau đó, HydraTxBuilder được sử dụng để đóng gói logic tạo transaction. Một điểm cần lưu ý là owner ở đây được đặt là tipAddress, vì đây là địa chỉ nhận tip.
+
+Sau khi gọi initialize() để đồng bộ trạng thái với Hydra, hàm sẽ thực hiện:
+
+```ts
+return await hydraTxBuilder.tip({ amount: String(amount) });
+```
+
+Hàm tip() sẽ tạo và gửi một giao dịch nội bộ trong Hydra Head, chuyển một lượng ADA từ người gửi đến người nhận. Do không cần chờ confirm từ Layer 1, kết quả gần như được phản ánh ngay lập tức trên UI.
+
+Tóm lại, hàm tip thể hiện rõ sức mạnh của Hydra trong việc xử lý các giao dịch nhỏ, tần suất cao. Nó giúp xây dựng các ứng dụng có trải nghiệm mượt mà như Web2 nhưng vẫn giữ được tính phi tập trung của blockchain.
+
+### 4. Hàm claim – Nhận tiền từ contract
+
+Hàm claim được sử dụng để nhận (rút) tài sản từ logic smart contract bên trong Hydra Head. Đây là bước cho phép người dùng “thu hồi” giá trị mà họ có quyền nhận, ví dụ như tiền tip, phần thưởng (reward), hoặc kết quả từ một logic contract đã hoàn tất trong Hydra.
+
+```ts
+export const claim = async function ({ address, isCreator = false }: { address: string; isCreator: boolean }) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: address,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        return await hydraTxBuilder.claim();
+    } catch (error) {
+        throw error;
+    }
+};
+```
+
+Luồng xử lý của hàm này khá đơn giản nhưng lại rất quan trọng trong toàn bộ vòng đời của một giao dịch trong Hydra. Đầu tiên, hệ thống khởi tạo MeshWallet và HydraProvider để thiết lập kết nối với Layer 1 và Hydra. Sau đó, HydraTxBuilder được sử dụng để đóng gói toàn bộ logic tương tác với smart contract.
+
+Sau khi gọi initialize() để đồng bộ trạng thái hiện tại của Hydra Head, hàm chỉ cần thực hiện một lệnh duy nhất là:
+
+```ts
+return await hydraTxBuilder.claim();
+```
+
+Lệnh này sẽ kích hoạt logic claim trong smart contract, cho phép người dùng nhận tài sản mà họ có quyền sở hữu. Khác với tip, hành động claim thường liên quan đến việc đọc và cập nhật trạng thái contract (ví dụ: đánh dấu đã nhận reward), nên nó mang ý nghĩa “kết thúc” hoặc “hoàn tất” một luồng logic nào đó.
+
+### 5. Hàm submitHydraTx – Gửi transaction vào Hydra
+
+Hàm submitHydraTx được sử dụng để gửi một transaction đã được ký (signed transaction) trực tiếp vào Hydra Head. Khác với các giao dịch trên Layer 1, transaction này không được gửi lên blockchain chính, mà chỉ được broadcast trong mạng Hydra giữa các participant. Điều này giúp tăng tốc độ xử lý và giảm chi phí đáng kể.
+
+```ts
+export const submitHydraTx = async function ({ address, signedTx, isCreator = false }: { address: string; signedTx: string; isCreator: boolean }) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: address,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        await hydraProvider.submitTx(signedTx);
+    } catch (error) {
+        throw error;
+    }
+};
+```
+
+Luồng xử lý của hàm bắt đầu bằng việc khởi tạo MeshWallet, HydraProvider và HydraTxBuilder, tương tự như các hàm trước. Mặc dù trong trường hợp này chúng ta không trực tiếp sử dụng HydraTxBuilder để tạo transaction, việc gọi initialize() vẫn cần thiết để đảm bảo kết nối với Hydra được thiết lập đúng và đồng bộ trạng thái.
+
+Sau đó, transaction đã được ký (signedTx) sẽ được gửi vào Hydra thông qua:
+
+```ts
+await hydraProvider.submitTx(signedTx);
+```
+
+Khác với submitTx trên Layer 1 (phải chờ confirm từ blockchain), ở đây transaction sẽ được xử lý gần như ngay lập tức trong Hydra Head. Các participant trong Head sẽ nhận và cập nhật trạng thái mới mà không cần chờ block được tạo.
+
+### 6. Hàm publishDecommit – Công bố giao dịch rút
+
+Hàm publishDecommit được sử dụng để công bố (publish) một transaction decommit đã được ký từ Hydra Head lên Cardano Layer 1. Nếu như decommit chỉ tạo và chuẩn bị giao dịch rút trong môi trường Hydra, thì bước này chính là cầu nối (bridge) để đưa giao dịch đó ra blockchain chính và hoàn tất quá trình rút tài sản.
+
+```ts
+export const publishDecommit = async function ({ address, signedTx, isCreator = false }: { address: string; signedTx: string; isCreator: boolean }) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: address,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        await hydraProvider.publishDecommit({
+            cborHex: signedTx,
+            description: "",
+            type: "Tx ConwayEra",
+        });
+    } catch (error) {
+        throw error;
+    }
+};
+```
+
+Sau khi khởi tạo MeshWallet, HydraProvider và HydraTxBuilder, hàm gọi initialize() để đảm bảo kết nối với Hydra được thiết lập đầy đủ. Tiếp theo, transaction decommit đã được ký (signedTx) sẽ được publish thông qua:
+
+```ts
+await hydraProvider.publishDecommit({
+    cborHex: signedTx,
+    description: "",
+    type: "Tx ConwayEra",
+});
+```
+
+Ở đây:
+
+- cborHex: là transaction đã được encode và ký
+- type: "Tx ConwayEra": xác định định dạng transaction theo era mới của Cardano
+- description: metadata (có thể để trống hoặc dùng để mô tả)
+
+### 7. Hàm fanout – Đóng Hydra Head
+
+Hàm fanout được sử dụng để đóng Hydra Head và phân phối lại toàn bộ tài sản từ Layer 2 về lại Cardano Layer 1. Đây là bước cuối cùng trong vòng đời của một Hydra Head, đảm bảo rằng tất cả trạng thái và tài sản off-chain được đồng bộ lại với blockchain chính một cách đầy đủ.
+
+```ts
+export const fanout = async function ({ address, isCreator = false }: { address: string; isCreator: boolean }) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: isCreator ? HYDRA_HTTP_URL : HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: address,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        if ((await getStatus()) === "OPEN") {
+            await hydraTxBuilder.close();
+        }
+
+        if ((await getStatus()) === "FANOUT_POSSIBLE") {
+            await hydraTxBuilder.fanout();
+        }
+    } catch (error) {
+        throw error;
+    }
+};
+```
+
+Luồng xử lý của hàm này tuân theo state machine của Hydra. Sau khi khởi tạo các thành phần cần thiết và gọi initialize(), hệ thống sẽ kiểm tra trạng thái hiện tại của Hydra Head thông qua getStatus().
+
+Nếu trạng thái là OPEN, nghĩa là Head vẫn đang hoạt động, hàm sẽ gọi close() để bắt đầu quá trình đóng Head. Đây là bước chuyển từ trạng thái hoạt động sang trạng thái chuẩn bị kết thúc, nơi các participant đồng thuận về trạng thái cuối cùng.
+
+Sau đó, khi trạng thái chuyển sang FANOUT_POSSIBLE, hệ thống sẽ gọi fanout() để thực hiện việc phân phối tài sản. Lúc này, toàn bộ UTXO và trạng thái cuối cùng trong Hydra sẽ được ghi lại lên Layer 1, đảm bảo rằng mọi thay đổi off-chain đều được phản ánh chính xác trên blockchain chính.
+
+### 8. Hàm getStatus – Lấy trạng thái Hydra
+
+Hàm getStatus được sử dụng để truy vấn trạng thái hiện tại của Hydra Head, từ đó quyết định hành động phù hợp trong từng thời điểm. Vì Hydra hoạt động theo mô hình state machine, nên việc kiểm tra trạng thái trước khi thực hiện bất kỳ thao tác nào là bắt buộc.
+
+```ts
+export const getStatus = async function () {
+    const hydraProvider = new HydraProvider({
+        httpUrl: HYDRA_HTTP_URL || HYDRA_HTTP_URL_SUB,
+    });
+
+    return String((await hydraProvider.get("head"))?.tag).toUpperCase();
+};
+```
+
+Trong hàm này, hydraProvider.get("head") được sử dụng để gọi API từ Hydra node và lấy thông tin về Head hiện tại. Kết quả trả về chứa nhiều metadata, trong đó tag chính là trạng thái của Head. Sau đó, giá trị này được chuyển thành chữ in hoa (toUpperCase()) để đảm bảo đồng nhất khi so sánh trong code.
+
+Các trạng thái chính của Hydra
+
+- IDLE: Hydra Head chưa được khởi tạo
+- OPEN: Head đang hoạt động, có thể thực hiện giao dịch
+- CLOSED: Head đã đóng, không thể thêm giao dịch mới
+- FANOUT_POSSIBLE: Có thể thực hiện phân phối tài sản về Layer 1
+
+Hàm getStatus là một trong những hàm quan trọng nhất khi làm việc với Hydra, vì hầu hết các hành động đều phụ thuộc vào trạng thái này. Ví dụ:
+
+- commit chỉ thực hiện khi phù hợp với trạng thái (IDLE hoặc OPEN)
+- decommit yêu cầu trạng thái phải là OPEN
+- fanout chỉ chạy khi đạt trạng thái FANOUT_POSSIBLE
+
+Nếu không kiểm tra trạng thái trước, hệ thống rất dễ gặp lỗi hoặc thực hiện sai logic.
+
+### 9. Hàm getUTxOsFromHydra – Lấy UTXO trong Hydra
+
+Hàm getUTxOsFromHydra được sử dụng để lấy danh sách UTXO của một địa chỉ ví nhưng trong phạm vi Hydra Head, thay vì trên Cardano Layer 1. Đây là cách để truy vấn trạng thái tài sản off-chain mà người dùng đang sở hữu trong Hydra.
+
+```ts
+export const getUTxOsFromHydra = async function (walletAddress: string) {
+    const hydraProvider = new HydraProvider({
+        httpUrl: HYDRA_HTTP_URL || HYDRA_HTTP_URL_SUB,
+    });
+
+    return await hydraProvider.fetchAddressUTxOs(walletAddress);
+};
+```
+
+Khác với việc lấy UTXO từ Layer 1 thông qua Blockfrost hoặc Mesh SDK, hàm này gọi trực tiếp đến Hydra node bằng hydraProvider.fetchAddressUTxOs(walletAddress). Kết quả trả về là danh sách các UTXO hiện đang tồn tại trong Hydra Head, phản ánh trạng thái tài sản sau các giao dịch off-chain như tip, transfer hoặc contract interaction.
+
+Hàm này rất quan trọng trong các DApp chạy trên Hydra vì nó giúp:
+
+- Kiểm tra số dư trong Hydra: biết được người dùng hiện có bao nhiêu ADA (hoặc token) trong môi trường Layer 2
+- Xây dựng transaction nội bộ: các giao dịch trong Hydra (như tip, transfer, claim) đều cần UTXO làm input
+- Đồng bộ UI: hiển thị số dư và trạng thái tài sản real-time mà không cần truy vấn Layer 1
+
+### 10. Hàm getRecent – Lấy dữ liệu gần nhất từ Hydra
+
+Hàm getRecent được sử dụng để đọc dữ liệu mới nhất từ Hydra Head, cụ thể là từ các UTXO có chứa plutusData (datum). Trong các ứng dụng sử dụng smart contract, datum chính là nơi lưu trữ state của contract, vì vậy việc đọc dữ liệu từ đây là cách phổ biến để lấy trạng thái hiện tại của hệ thống trong Hydra.
+
+```ts
+export const getRecent = async function ({ address }: { address: string }) {
+    try {
+        const meshWallet = new MeshWallet({
+            networkId: APP_NETWORK_ID,
+            fetcher: blockfrostProvider,
+            submitter: blockfrostProvider,
+            key: {
+                type: "address",
+                address: address,
+            },
+        });
+
+        const hydraProvider = new HydraProvider({
+            httpUrl: HYDRA_HTTP_URL || HYDRA_HTTP_URL_SUB,
+        });
+
+        const hydraTxBuilder = new HydraTxBuilder({
+            meshWallet: meshWallet,
+            hydraProvider: hydraProvider,
+            owner: address,
+            minimumTip: 2_000_000,
+        });
+
+        await hydraTxBuilder.initialize();
+
+        const utxo = (await hydraProvider.fetchAddressUTxOs(hydraTxBuilder.spendAddress)).find((utxo) => utxo.output.plutusData);
+
+        return hydraTxBuilder.convertDatum(utxo?.output.plutusData as string);
+    } catch (error) {
+        throw error;
+    }
+};
+```
+
 ---
+
+Luồng xử lý của hàm bắt đầu bằng việc khởi tạo các thành phần quen thuộc như MeshWallet, HydraProvider và HydraTxBuilder. Sau khi gọi initialize() để đồng bộ trạng thái, hàm sẽ tiến hành truy vấn danh sách UTXO từ spendAddress – đây thường là địa chỉ mà smart contract sử dụng để lưu trữ state.
+
+Tiếp theo, hàm tìm một UTXO có chứa plutusData:
+
+```ts
+.find((utxo) => utxo.output.plutusData);
+```
+
+Điều này rất quan trọng vì không phải tất cả UTXO đều chứa datum. Chỉ những UTXO liên quan đến smart contract mới có plutusData, và đây chính là nơi lưu trạng thái của contract tại thời điểm hiện tại.
+
+Sau khi tìm được UTXO phù hợp, dữ liệu sẽ được decode thông qua:
+
+```ts
+hydraTxBuilder.convertDatum(utxo?.output.plutusData as string);
+```
+
+Hàm convertDatum sẽ chuyển dữ liệu từ dạng raw (CBOR/hex) sang cấu trúc dễ sử dụng hơn trong JavaScript, giúp frontend hoặc backend có thể đọc và xử lý logic tiếp theo.
 
 <div align="center">
 
