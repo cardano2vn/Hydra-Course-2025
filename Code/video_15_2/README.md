@@ -163,97 +163,7 @@ Cuối cùng, khối try/catch/finally đảm bảo rằng mọi lỗi đều đ
 
 ---
 
-## Hiển thị danh sách creator
-
-Trong phần này, chúng ta xây dựng giao diện hiển thị danh sách các creator (proposal) đã được tạo trong hệ thống. Dữ liệu này được lấy từ backend (Prisma) nhưng lại gắn chặt với các hành động on-chain/off-chain trên Hydra, vì mỗi proposal thường tương ứng với một creator đã thực hiện commit vào Hydra.
-
-Trước hết, hệ thống sử dụng useState để quản lý phân trang và useWallet để lấy địa chỉ ví hiện tại:
-
-```ts
-const [page, setPage] = useState(1);
-const { address } = useWallet();
-```
-
-Biến page giúp theo dõi trang hiện tại, trong khi address được dùng để lọc dữ liệu (ví dụ: loại bỏ proposal của chính người dùng nếu cần). Sau đó, dữ liệu được fetch thông qua useQuery:
-
-```ts
-const { data, isLoading, error } = useQuery({
-    queryKey: ["proposals", page, address],
-    queryFn: async () =>
-        getAllProposals({
-            page: page,
-            limit: 6,
-            address: address || "",
-        }),
-});
-```
-
-Ở đây, queryKey phụ thuộc vào cả page và address, giúp React Query tự động refetch khi người dùng chuyển trang hoặc đổi ví. Hàm getAllProposals sẽ trả về danh sách proposal kèm theo tổng số trang, phục vụ cho việc phân trang.
-
-Sau khi có dữ liệu, danh sách proposal được render ra UI thông qua .map():
-
-```ts
-{data?.data.map((result, index) => (
-    <motion.div
-        key={result.address || index}
-        className="rounded-xl border border-blue-100 bg-white shadow-lg dark:border-blue-900/30 dark:bg-slate-900/80"
-        variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-        }}
-        transition={{ delay: index * 0.1 }}
-        whileHover={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
-    >
-        <Tipper
-            image={result.image || images.logo}
-            title={result.title || "Untitled Proposal"}
-            author={result.author || "Unknown Author"}
-            slug={result.address || ""}
-            datetime={new Date(Number(result.createdAt || Date.now())).toLocaleString("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-            })}
-            participants={2}
-        />
-    </motion.div>
-))}
-```
-
-Mỗi proposal được hiển thị dưới dạng một card (Tipper component), bao gồm các thông tin như hình ảnh, tiêu đề, tác giả, thời gian tạo và số lượng người tham gia. Việc sử dụng motion.div (Framer Motion) giúp tạo animation mượt mà khi render (fade + slide) và hiệu ứng hover (phóng to nhẹ), từ đó cải thiện trải nghiệm người dùng.
-
-Ngoài ra, dữ liệu cũng được xử lý fallback để tránh lỗi UI, ví dụ: nếu thiếu title hoặc author thì sẽ hiển thị giá trị mặc định. Thời gian createdAt được format lại để dễ đọc hơn.
-
-Cuối cùng là phần phân trang:
-
-```ts
-{(data?.totalPages ?? 0) > 1 && (
-    <motion.div
-        className="mt-12 flex justify-center"
-        variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-        }}
-        initial="hidden"
-        animate="visible"
-        transition={{ delay: 0.2 }}
-    >
-        <Pagination
-            currentPage={page}
-            totalPages={data?.totalPages as number}
-            setCurrentPage={setPage}
-        />
-    </motion.div>
-)}
-```
-
-Phần này chỉ hiển thị khi có nhiều hơn 1 trang dữ liệu. Component Pagination cho phép người dùng chuyển trang, và khi page thay đổi, useQuery sẽ tự động gọi lại API để lấy dữ liệu mới. Animation cũng được áp dụng để giữ trải nghiệm nhất quán với phần danh sách.
-
----
-
-## Hoàn thành các chức năng trong giao diện tip
+## Hoàn thành các chức năng trong giao diện dashboard
 
 ### Commit
 
@@ -656,6 +566,152 @@ Việc refresh dữ liệu này giúp giao diện phản ánh chính xác trạn
 Cuối cùng, dù quá trình thành công hay gặp lỗi, trạng thái isLoadingFanout luôn được reset về false trong khối finally. Điều này đảm bảo UI không bị kẹt ở trạng thái loading và giữ trải nghiệm người dùng luôn ổn định.
 
 Tổng thể, Close & Fanout là bước quan trọng nhất trong vòng đời Hydra Head, đóng vai trò kết thúc phiên giao dịch off-chain và đảm bảo toàn bộ tài sản được đồng bộ chính xác về blockchain chính, hoàn thiện chu trình hoạt động của hệ thống.
+
+---
+
+## 📚 Trình bày demo toàn bộ luồng hoạt động của ứng dụng
+
+### 🚀 1. Truy cập ứng dụng
+
+Người dùng bắt đầu bằng việc mở trình duyệt và truy cập vào địa chỉ của hệ thống. Trong quá trình phát triển, ứng dụng thường được chạy ở môi trường local với đường dẫn http://localhost:3000. Khi triển khai thực tế lên server hoặc VPS, người dùng sẽ truy cập thông qua domain hoặc địa chỉ IP tương ứng như http://<domain hoặc IP>.
+
+Ngay sau khi trang web được tải, hệ thống sẽ tự động khởi tạo toàn bộ frontend và thực hiện bước kiểm tra trạng thái ban đầu của người dùng. Trong đó, quan trọng nhất là kiểm tra trạng thái kết nối ví blockchain. Ứng dụng sẽ xác định xem người dùng đã kết nối ví hay chưa thông qua các hook quản lý ví (ví dụ như useWallet).
+
+Nếu người dùng chưa kết nối ví, hệ thống sẽ tự động điều hướng đến trang đăng nhập hoặc trang kết nối ví. Điều này nhằm đảm bảo rằng mọi thao tác trong ứng dụng đều được xác thực thông qua ví cá nhân, tránh các hành vi truy cập không hợp lệ và đảm bảo tính bảo mật trong toàn bộ hệ thống.
+
+Khi ví được kết nối thành công, hệ thống sẽ khởi tạo các thông tin quan trọng như địa chỉ ví chính, stake address và các instance cần thiết để tương tác với blockchain. Từ thời điểm này, người dùng đã sẵn sàng để thực hiện các chức năng như commit, tip, claim hoặc fanout trong hệ sinh thái của ứng dụng.
+
+---
+
+🔐 **2. Kết nối ví (Wallet Connection)**
+
+Sau khi truy cập vào hệ thống và được điều hướng đến trang đăng nhập, người dùng sẽ thực hiện bước kết nối ví blockchain để có thể sử dụng toàn bộ chức năng của ứng dụng. Đây là bước bắt buộc nhằm đảm bảo mọi giao dịch đều được xác thực thông qua ví cá nhân.
+
+Đầu tiên, người dùng sẽ lựa chọn loại ví mà mình đang sử dụng, chẳng hạn như Eternl, Nami, Flint hoặc các ví hỗ trợ khác trong hệ sinh thái Cardano. Sau khi chọn ví phù hợp, người dùng nhấn vào nút Connect / Enable / Grant Access để cấp quyền truy cập cho ứng dụng.
+
+Tại thời điểm này, trình duyệt sẽ kích hoạt extension của ví và yêu cầu người dùng xác nhận quyền kết nối. Người dùng cần đồng ý cấp quyền truy cập, và trong một số trường hợp có thể phải nhập mật khẩu ví để xác thực danh tính. Đây là bước quan trọng nhằm đảm bảo chỉ chủ sở hữu ví mới có thể kết nối và sử dụng ứng dụng.
+
+Khi quá trình xác thực hoàn tất, ứng dụng sẽ nhận được các thông tin cơ bản từ ví như địa chỉ ví chính, stake address và các thông tin cần thiết để tương tác với blockchain. Hệ thống sẽ lưu các dữ liệu này vào state toàn cục để sử dụng xuyên suốt trong các chức năng như commit, tip, claim hoặc fanout.
+
+Ngay sau khi kết nối thành công, người dùng sẽ được tự động chuyển hướng đến trang Dashboard. Tại đây, hệ thống sẽ hiển thị tổng quan thông tin tài khoản, bao gồm số dư ví, trạng thái kết nối và các chức năng chính của ứng dụng, giúp người dùng bắt đầu tương tác với hệ thống một cách nhanh chóng và liền mạch.
+
+---
+
+🧑‍💻 **3. Tạo Creator**
+
+Tại trang Dashboard, sau khi đã kết nối ví thành công, người dùng có thể bắt đầu tạo một Creator mới trong hệ thống. Đây là bước quan trọng nhằm khởi tạo một thực thể đại diện cho nội dung hoặc dự án có thể nhận tip và tương tác trong Hydra.
+
+Để thực hiện, người dùng nhấn vào nút “Tạo Creator” (hoặc chức năng tương tự được hiển thị trên giao diện). Hệ thống sẽ mở một form nhập liệu để người dùng cung cấp các thông tin cần thiết cho Creator mới.
+
+Các trường thông tin bao gồm:
+
+- Title: Tiêu đề của Creator hoặc dự án
+- Description: Mô tả chi tiết nội dung hoặc mục tiêu của Creator
+- Author: Tên người tạo hoặc đại diện
+- Image: Hình ảnh đại diện giúp nhận diện Creator trên giao diện
+- Thời gian hoạt động (nếu có): xác định khoảng thời gian Creator tồn tại hoặc hoạt động trong hệ thống
+
+Sau khi người dùng điền đầy đủ thông tin, hệ thống sẽ tiến hành xác thực dữ liệu và yêu cầu người dùng ký giao dịch thông qua ví đã kết nối. Đây là bước đảm bảo rằng việc tạo Creator được ghi nhận và xác thực on-chain hoặc thông qua logic hệ thống tương ứng.
+
+Khi quá trình tạo hoàn tất thành công, Creator mới sẽ được lưu vào hệ thống và hiển thị trong danh sách chung. Tại thời điểm này, Creator đã sẵn sàng tham gia vào toàn bộ luồng hoạt động của ứng dụng, bao gồm nhận tip, commit tài sản hoặc tương tác với Hydra Head tùy theo logic được thiết kế.
+
+---
+
+💰 **4. Commit tài sản vào Hydra Head**
+
+Để tham gia vào Hydra Head, người dùng cần thực hiện bước commit tài sản từ Layer 1 vào Layer 2, đây là cơ chế cốt lõi giúp đưa UTxO vào môi trường xử lý nhanh của hệ thống Hydra.
+
+Trước tiên, người dùng sẽ lựa chọn một UTxO (Unspent Transaction Output) từ ví cá nhân của mình. Đây là đơn vị tài sản cơ bản trong Cardano, đại diện cho số dư chưa được sử dụng. Sau khi chọn UTxO phù hợp, người dùng nhấn vào nút “Commit vào Hydra Head” để bắt đầu quá trình giao dịch.
+
+Hệ thống sẽ tạo một transaction tương ứng và gửi yêu cầu ký lên ví của người dùng. Tại bước này, ví (ví dụ Eternl hoặc các ví tương thích khác) sẽ hiển thị thông tin giao dịch để người dùng xác nhận. Người dùng cần ký giao dịch để xác thực quyền sở hữu và cho phép chuyển UTxO vào Hydra Head.
+
+Sau khi transaction được ký và gửi thành công, UTxO sẽ được đưa vào trạng thái xử lý trong Hydra. Lúc này, hệ thống sẽ cập nhật lại trạng thái của Hydra Head, thường chuyển sang trạng thái “đang hoạt động” hoặc “đã nhận commit”, tùy theo logic state machine hiện tại của hệ thống.
+
+Đồng thời, UTxO vừa commit sẽ không còn hiển thị trong ví Layer 1 nữa mà sẽ xuất hiện trong danh sách tài sản bên trong Hydra Head. Điều này giúp người dùng theo dõi rõ ràng phần tài sản đang được sử dụng trong môi trường off-chain, sẵn sàng cho các giao dịch nhanh như tip, claim hoặc decommit.
+
+---
+
+🔄 **5. Thực hiện Tip**
+
+Sau khi đã có Creator và tài sản được commit vào Hydra Head, người dùng có thể bắt đầu thực hiện chức năng tip để gửi giá trị cho Creator một cách nhanh chóng trong môi trường Layer 2.
+
+Đầu tiên, người dùng sẽ chọn Creator mà mình muốn tip từ danh sách hiển thị trên giao diện. Đây là các Creator đã được tạo và đang hoạt động trong hệ thống Hydra. Sau đó, người dùng nhập số lượng ADA muốn gửi, đảm bảo giá trị hợp lệ và không vượt quá số dư hiện có trong Hydra.
+
+Khi đã hoàn tất việc nhập thông tin, người dùng nhấn nút “Tip” để khởi tạo giao dịch. Hệ thống sẽ tạo một transaction tương ứng trong Hydra và gửi yêu cầu ký đến ví của người dùng. Ví blockchain sẽ hiển thị thông tin giao dịch để người dùng xác nhận, từ đó đảm bảo rằng mọi giao dịch đều được thực hiện dưới sự kiểm soát của chủ sở hữu tài sản.
+
+Sau khi giao dịch được ký và xử lý thành công trong Hydra Head của Hydra, hệ thống sẽ cập nhật ngay lập tức trạng thái giao diện. Người dùng sẽ thấy số dư thay đổi tương ứng, đồng thời lịch sử tip cũng được cập nhật real-time mà không cần tải lại trang.
+
+Ở tầng backend, một snapshot mới của trạng thái Hydra sẽ được tạo ra để đảm bảo tính nhất quán giữa các participant trong cùng một Head. Điều này giúp toàn bộ hệ thống luôn đồng bộ và phản ánh chính xác trạng thái tài sản sau mỗi giao dịch.
+
+Cuối cùng, số dư của Creator trong smart contract hoặc trong trạng thái Hydra sẽ được tăng lên tương ứng với số ADA đã được tip, đảm bảo tính chính xác và minh bạch trong toàn bộ luồng giao dịch.
+
+---
+
+➕ **6. Commit thêm tài sản**
+
+Trong quá trình sử dụng Hydra Head, người dùng không bị giới hạn chỉ commit một lần mà có thể tiếp tục bổ sung tài sản bất kỳ lúc nào. Đây là một đặc điểm quan trọng của mô hình Layer 2 trong Hydra, cho phép mở rộng thanh khoản linh hoạt mà không ảnh hưởng đến trạng thái đang hoạt động của hệ thống.
+
+Khi muốn tăng thêm số dư trong Hydra Head, người dùng sẽ bắt đầu bằng việc chọn một UTxO mới từ ví cá nhân của mình. UTxO này phải còn khả dụng trên Layer 1 và chưa được sử dụng trong giao dịch khác. Sau khi lựa chọn xong, người dùng thực hiện thao tác commit tương tự như lần đầu bằng cách gửi yêu cầu lên hệ thống.
+
+Tiếp theo, transaction commit sẽ được tạo ra và gửi đến ví để người dùng ký xác nhận. Việc ký giao dịch đảm bảo rằng chỉ chủ sở hữu ví mới có quyền đưa tài sản vào Hydra Head, đồng thời duy trì tính an toàn và minh bạch trong toàn bộ quá trình.
+
+Sau khi giao dịch được xác nhận thành công, UTxO mới sẽ được nạp thêm vào Hydra Head mà không làm gián đoạn các hoạt động đang diễn ra như tip, claim hay decommit. Điều này có nghĩa là hệ thống vẫn tiếp tục hoạt động bình thường trong khi trạng thái tài sản được mở rộng theo thời gian thực.
+
+Cuối cùng, giao diện sẽ được cập nhật để phản ánh số dư mới trong Hydra Head, giúp người dùng dễ dàng theo dõi toàn bộ tài sản đang được sử dụng trong hệ thống một cách trực quan và liên tục.
+
+---
+
+💸 **7. Claim tài sản**
+
+Khi Creator muốn nhận lại toàn bộ phần ADA đã được người dùng tip trong Hydra Head của Hydra, họ sẽ thực hiện chức năng Claim.
+
+Quá trình bắt đầu bằng việc Creator nhấn nút “Claim” trên giao diện. Hệ thống sẽ khởi tạo một giao dịch tương ứng với logic smart contract bên trong Hydra Head, sau đó gửi yêu cầu ký lên ví của Creator.
+
+Tại bước này, ví sẽ hiển thị thông tin giao dịch để người dùng kiểm tra và xác nhận. Sau khi ký thành công, transaction sẽ được xử lý trong Hydra, và số ADA tương ứng sẽ được chuyển về ví của Creator.
+
+Ngay sau khi giao dịch hoàn tất, hệ thống sẽ tự động cập nhật lại giao diện, bao gồm số dư mới của Creator và trạng thái claim, đảm bảo dữ liệu hiển thị luôn đồng bộ với trạng thái thực tế trên blockchain.
+
+---
+
+🔙 **8. Decommit tài sản về Layer 1**
+
+Trong trường hợp người dùng muốn rút tài sản ra khỏi Hydra Head, họ có thể sử dụng chức năng Decommit, đưa UTxO từ Layer 2 trở lại Layer 1 (Cardano mainchain).
+
+Đầu tiên, người dùng chọn UTxO mà mình muốn rút từ danh sách tài sản đang tồn tại trong Hydra Head. Sau đó nhấn nút “Decommit” để khởi tạo quá trình rút tài sản.
+
+Hệ thống sẽ tạo transaction decommit và gửi lên ví để người dùng ký xác nhận. Sau khi được ký thành công, transaction sẽ được xử lý theo cơ chế của Hydra và chuẩn bị đưa tài sản trở lại Layer 1.
+
+Kết quả cuối cùng là UTxO sẽ rời khỏi Hydra Head và xuất hiện trở lại trên mainchain Cardano, cho phép người dùng tiếp tục sử dụng trong các giao dịch thông thường ngoài Layer 2.
+
+---
+
+🔒 **9. Close & Fanout (tuỳ chọn)**
+
+Khi cần kết thúc một phiên làm việc của Hydra Head, người vận hành có thể thực hiện quy trình Close & Fanout.
+
+Trước tiên, hệ thống sẽ thực hiện thao tác Close để đóng Hydra Head, ngăn không cho các giao dịch mới tiếp tục được thêm vào. Sau khi Head đã được đóng hoàn toàn, bước tiếp theo là Fanout, nhằm phân phối toàn bộ tài sản còn lại trong Hydra Head về lại các ví tương ứng trên Layer 1.
+
+Trong thực tế, Hydra Head thường được giữ ở trạng thái mở để nhiều người dùng có thể tiếp tục tham gia và giao dịch với tốc độ cao. Chỉ khi hệ thống cần kết thúc phiên, tổng hợp kết quả hoặc reset trạng thái, quá trình Close & Fanout mới được thực hiện.
+
+Điều này giúp đảm bảo tính linh hoạt của mô hình Layer 2, vừa hỗ trợ giao dịch nhanh trong Hydra, vừa đảm bảo an toàn và đồng bộ dữ liệu khi quay trở lại Layer 1 trên Cardano.
+
+---
+
+📊 **Tổng kết luồng hoạt động**
+
+Toàn bộ hệ thống được thiết kế theo một luồng xử lý thống nhất, kết hợp giữa Frontend, Backend và Layer 2 Hydra trong Hydra, nhằm đảm bảo trải nghiệm người dùng mượt mà, tốc độ cao và tính nhất quán dữ liệu xuyên suốt.
+
+Quy trình bắt đầu từ việc người dùng truy cập ứng dụng, hệ thống sẽ kiểm tra trạng thái kết nối ví để đảm bảo mọi thao tác đều được xác thực. Sau đó, người dùng tiến hành kết nối ví blockchain, qua đó cấp quyền truy cập và xác thực danh tính trên hệ thống.
+
+Khi đã sẵn sàng, người dùng có thể tạo Creator mới bằng cách cung cấp các thông tin cơ bản như tiêu đề, mô tả, tác giả và hình ảnh đại diện. Creator sau khi được tạo sẽ trở thành một thực thể trung tâm trong hệ thống, có khả năng nhận tip và tham gia các hoạt động trong Hydra Head.
+
+Tiếp theo là bước commit tài sản, nơi người dùng đưa UTxO từ Layer 1 vào Hydra Head để tham gia các giao dịch Layer 2. Đây là bước quan trọng giúp chuyển tài sản sang môi trường xử lý nhanh và hiệu quả hơn. Trong quá trình sử dụng, người dùng có thể thực hiện tip cho Creator, giúp cập nhật số dư và trạng thái giao dịch gần như tức thì.
+
+Ngoài ra, hệ thống cũng hỗ trợ commit thêm tài sản bất kỳ lúc nào, cho phép người dùng linh hoạt mở rộng số dư trong Hydra Head mà không làm gián đoạn các hoạt động đang diễn ra. Khi Creator muốn nhận phần thưởng, họ có thể thực hiện claim để rút ADA về ví cá nhân.
+
+Song song đó, người dùng cũng có thể decommit tài sản, tức là rút UTxO từ Hydra Head quay trở lại Layer 1 khi không còn nhu cầu sử dụng Layer 2. Trong trường hợp cần kết thúc phiên hoạt động, hệ thống hỗ trợ close và fanout, giúp đóng Hydra Head và phân phối lại toàn bộ tài sản về các ví tương ứng trên mainchain.
+
+Tổng thể, toàn bộ luồng hoạt động tạo thành một vòng đời hoàn chỉnh: từ khởi tạo → xác thực → tham gia → giao dịch → rút về, đảm bảo tính linh hoạt, hiệu năng cao và khả năng mở rộng của hệ thống dựa trên Hydra và Cardano.
 
 ---
 
