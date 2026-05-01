@@ -576,6 +576,8 @@ Song song với đó, Hydra Layer đóng vai trò là thành phần tăng tốc 
 
 👉 Tổng thể, kiến trúc này tạo nên một hệ thống TipJar cân bằng giữa ba yếu tố quan trọng: tính an toàn (security), hiệu năng (performance) và trải nghiệm người dùng (UX), trong đó Hydra đóng vai trò trung tâm trong việc hiện thực hóa khả năng xử lý realtime cho các ứng dụng micro-payment trên Cardano.
 
+---
+
 <div align="center">
 
 ## 📚 **Tài liệu tham khảo**
