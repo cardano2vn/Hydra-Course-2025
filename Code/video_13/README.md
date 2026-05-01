@@ -1558,6 +1558,8 @@ thực thi transaction realtime mà không cần chờ blockchain Layer 1
 
 👉 Đây là minh chứng rõ ràng cho khả năng xử lý low-latency state transition của Hydra so với Cardano Layer 1 truyền thống.
 
+---
+
 <div align="center">
 
 ## 📚 **Tài liệu tham khảo**

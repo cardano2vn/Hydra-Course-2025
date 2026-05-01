@@ -951,6 +951,8 @@ Cuối cùng là phần UI sử dụng AlertDialog để hiển thị trạng th
 
 Tổng thể, component này đang implement một flow 3 bước: Chưa có ví → Download. Có ví nhưng chưa enable → Enable.Đã enable → Sign in bằng wallet. Điểm cần cải thiện chính nằm ở việc quản lý useEffect dependency và tránh việc state bị trigger lặp, giúp code ổn định hơn và tránh re-render không cần thiết.
 
+---
+
 <div align="center">
 
 ## 📚 **Tài liệu tham khảo**
