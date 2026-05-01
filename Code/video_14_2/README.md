@@ -1245,6 +1245,8 @@ hydraTxBuilder.convertDatum(utxo?.output.plutusData as string);
 
 Hàm convertDatum sẽ chuyển dữ liệu từ dạng raw (CBOR/hex) sang cấu trúc dễ sử dụng hơn trong JavaScript, giúp frontend hoặc backend có thể đọc và xử lý logic tiếp theo.
 
+---
+
 <div align="center">
 
 ## 📚 **Tài liệu tham khảo**
