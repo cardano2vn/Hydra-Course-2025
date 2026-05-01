@@ -299,6 +299,8 @@ Cuối cùng, cấu trúc cần đảm bảo tính dễ bảo trì (maintainabil
 
 Tóm lại, việc áp dụng các nguyên tắc như tách biệt On-chain/Off-chain, module hóa, khả năng mở rộng và dễ bảo trì sẽ giúp bạn xây dựng một nền tảng vững chắc cho toàn bộ hệ thống DApp, từ đó tối ưu hóa quá trình phát triển cũng như vận hành trong thực tế.
 
+---
+
 <div align="center">
 
 ## 📚 **Tài liệu tham khảo**
