@@ -1,7 +1,7 @@
 ### Title:
 
 ```
-13 - Integrating Smart Contracts with the Hydra Backend – Connecting Off-Chain Code to Hydra Heads
+15.2 - Testing and Validating the Hydra DApp – Simulating Multi-Participant Scenarios and Measuring Performance
 ```
 
 ### Description:
