@@ -2,141 +2,228 @@
 
 ---
 
-## ✅ Bài 1: Vai trò của Off-chain Layer
+## ✅ Bài 1: Vai trò của Hydra trong luồng Tip
 
 ### 📌 Đề bài
 
-Giải thích vai trò quan trọng của tầng **Off-chain** (Backend) khi tích hợp với Smart Contract trong hệ thống TipJar trên Hydra.
+Phân tích vai trò của Hydra Head trong quá trình người dùng thực hiện Tip. Hydra đã cải thiện những điểm nào so với việc gửi transaction trực tiếp lên Cardano Layer-1?
 
 ### 💡 Gợi ý
 
-- Orchestration
-- State management
-- Giảm tải On-chain
+Off-chain transaction
+Realtime
+Low cost
+Settlement
 
 <details>
 <summary>Đáp án</summary>
 
-Tầng Off-chain đóng vai trò là **bộ điều phối trung tâm** (orchestration layer):
+Hydra Head cho phép các giao dịch được thực hiện ngoài chuỗi chính (off-chain) giữa các participant đã tham gia Head.
 
-- Xây dựng và chuẩn bị transaction trước khi gửi lên Hydra hoặc Layer-1.
-- Quản lý và đồng bộ trạng thái giữa Frontend, Hydra Head và Smart Contract.
-- Giảm tải cho On-chain bằng cách xử lý logic phức tạp (đọc UTxO, decode datum, tính toán state mới).
-- Kết nối Mesh SDK, Hydra SDK và Smart Contract.
+Khi người dùng thực hiện Tip:
 
-👉 Kết luận: Off-chain giúp hệ thống đạt được hiệu năng realtime trong khi vẫn giữ bảo mật từ On-chain.
+Transaction được xử lý trong Hydra Head thay vì gửi trực tiếp lên Layer-1.
+Kết quả được xác nhận gần như tức thì.
+Không phát sinh phí cho mỗi lần Tip.
+Trạng thái mới được đồng bộ giữa các participant trong Head.
+
+Layer-1 chỉ được sử dụng khi:
+
+Commit tài sản vào Head.
+Decommit tài sản ra khỏi Head.
+Fanout để ghi trạng thái cuối cùng lên blockchain.
+
+👉 Kết luận: Hydra giúp TipJar đạt được trải nghiệm realtime và chi phí thấp, phù hợp với các giao dịch micropayment.
 
 </details>
 
 ---
 
-## ✅ Bài 2: MeshTxBuilder
+## ✅ Bài 2: Cấu trúc dữ liệu TipJar State
 
 ### 📌 Đề bài
 
-MeshTxBuilder là gì? Vai trò của nó trong việc xử lý Tip & Claim?
+Mô tả thông tin cần được lưu trong trạng thái (state) của TipJar. Tại sao việc thiết kế state hợp lý lại quan trọng?
 
 ### 💡 Gợi ý
 
-- Kế thừa MeshAdapter
-- Transaction Builder
-- State transition
+Address
+Amount
+Aggregation
+Datum structure
 
 <details>
 <summary>Đáp án</summary>
 
-**MeshTxBuilder** là lớp mở rộng từ MeshAdapter, đóng vai trò trung tâm ở tầng off-chain.
+State của TipJar thường lưu:
 
-- Xây dựng transaction hợp lệ cho cả hai hành động: **Tip** (gửi tip) và **Claim** (rút tiền).
-- Đọc trạng thái hiện tại từ Smart Contract (UTxO + Datum).
-- Tính toán state mới và encode datum.
-- Đảm bảo transaction tuân thủ logic validator của Aiken.
+Địa chỉ người nhận tip.
+Tổng số ADA đã được tip.
+Danh sách người gửi tip (nếu cần).
+Thông tin phục vụ việc claim sau này.
 
-👉 Kết luận: MeshTxBuilder là “cầu nối” giữa Frontend/User và Smart Contract.
+Ví dụ:
+
+[
+{
+"address": "addr_test1...",
+"amount": 5000000
+}
+]
+
+Thiết kế state hợp lý giúp:
+
+Dễ dàng cập nhật khi có tip mới.
+Giảm kích thước datum.
+Tiết kiệm tài nguyên xử lý.
+Đơn giản hóa logic validator.
+
+👉 Kết luận: Một state được thiết kế tốt giúp hệ thống dễ mở rộng và hoạt động hiệu quả hơn.
 
 </details>
 
 ---
 
-## ✅ Bài 3: Logic hàm tip()
+## ✅ Bài 3: Xử lý lỗi trong Off-chain Layer
 
 ### 📌 Đề bài
 
-Mô tả các bước chính trong hàm `tip()` của MeshTxBuilder.
+Những lỗi nào có thể xảy ra trong quá trình xây dựng transaction ở tầng Off-chain? Đề xuất cách xử lý cho từng trường hợp.
 
 ### 💡 Gợi ý
 
-- getWalletForTx
-- Fetch UTxO
-- Decode datum → Update state → Encode datum
+Missing UTxO
+Wallet disconnected
+Invalid datum
+Error handling
 
 <details>
 <summary>Đáp án</summary>
 
-Các bước chính trong `tip()`:
+Một số lỗi phổ biến:
 
-1. Lấy thông tin ví (`getWalletForTx()`): UTxOs, collateral, walletAddress.
-2. Truy vấn UTxO hiện tại của Smart Contract.
-3. Decode datum → chuyển thành danh sách tip (`[{address, amount}]`).
-4. Cập nhật state: cộng dồn tip nếu user đã tồn tại hoặc thêm mới.
-5. Xây dựng transaction: consume UTxO cũ → tạo UTxO mới với giá trị + datum cập nhật.
-6. Sử dụng redeemer `Tip`.
+Wallet chưa kết nối
+Không lấy được địa chỉ ví.
+Không truy xuất được UTxO.
 
-👉 Kết luận: Toàn bộ quá trình là một **state transition** trên mô hình eUTxO.
+Giải pháp:
+
+Kiểm tra wallet trước khi thực hiện giao dịch.
+Không tìm thấy Script UTxO
+Smart Contract chưa có state.
+UTxO đã bị consume.
+
+Giải pháp:
+
+Refetch dữ liệu mới nhất.
+Datum không hợp lệ
+Decode thất bại.
+Dữ liệu không đúng cấu trúc.
+
+Giải pháp:
+
+Validate dữ liệu trước khi encode.
+Thiếu UTxO hoặc ADA
+User không đủ tiền.
+
+Giải pháp:
+
+Kiểm tra balance trước khi build transaction.
+
+👉 Kết luận: Error handling tốt giúp DApp ổn định và cải thiện trải nghiệm người dùng.
 
 </details>
 
 ---
 
-## ✅ Bài 4: Xử lý Datum trong Off-chain
+## ✅ Bài 4: Tại sao cần tách Frontend và Off-chain?
 
 ### 📌 Đề bài
 
-Giải thích cách Off-chain xử lý Datum khi thực hiện Tip (decode, update, encode).
+Giải thích lý do kiến trúc TipJar tách riêng Frontend và Off-chain Backend thay vì xử lý toàn bộ logic trực tiếp trên giao diện.
 
 ### 💡 Gợi ý
 
-- convertDatum
-- existing user
-- mConStr0
+Separation of concerns
+Security
+Maintainability
+Reusability
 
 <details>
 <summary>Đáp án</summary>
 
-- **Decode**: `convertDatum()` chuyển PlutusData (CBOR) thành array object `[{address, amount}]`.
-- **Update**: Tìm user trong danh sách, nếu có thì cộng dồn amount, nếu chưa thì push record mới.
-- **Encode**: Sử dụng `mConStr0()` để chuyển array thành định dạng datum hợp lệ cho transaction.
+Việc tách Frontend và Backend mang lại nhiều lợi ích:
 
-👉 Kết luận: Off-chain phải xử lý datum chính xác để đảm bảo validator On-chain chấp nhận transaction.
+Frontend
+Chỉ tập trung hiển thị dữ liệu.
+Nhận input từ người dùng.
+Quản lý trải nghiệm người dùng.
+Off-chain Backend
+Xây dựng transaction.
+Quản lý trạng thái.
+Tương tác với Hydra và Smart Contract.
+Kết nối Database.
+
+Lợi ích:
+
+Dễ bảo trì.
+Dễ mở rộng hệ thống.
+Tăng tính bảo mật.
+Có thể tái sử dụng API cho nhiều giao diện khác nhau.
+
+👉 Kết luận: Kiến trúc phân lớp giúp dự án chuyên nghiệp và dễ phát triển lâu dài.
 
 </details>
 
 ---
 
-## ✅ Bài 5: So sánh Tip và Claim
+## ✅ Bài 5: Luồng dữ liệu từ User đến Smart Contract
 
 ### 📌 Đề bài
 
-So sánh logic xử lý **Tip** và **Claim** trong MeshTxBuilder.
+Mô tả luồng dữ liệu hoàn chỉnh từ khi người dùng nhấn nút Tip trên giao diện cho đến khi trạng thái mới được lưu vào Smart Contract.
 
 ### 💡 Gợi ý
 
-- Redeemer
-- Quyền truy cập
-- Output
+Frontend
+Backend
+Transaction Builder
+Validator
+New state
 
 <details>
 <summary>Đáp án</summary>
+Luồng xử lý gồm các bước:
 
-| Tiêu chí          | Tip                              | Claim                              |
-|-------------------|----------------------------------|------------------------------------|
-| Redeemer          | `Tip`                            | `Claim`                            |
-| Ai thực hiện      | Bất kỳ ai                        | Chỉ Owner (kiểm tra chữ ký)        |
-| Xử lý UTxO        | Consume cũ → Tạo mới + thêm tiền | Consume và rút toàn bộ tiền        |
-| Datum             | Cập nhật danh sách tip           | Thường không cần output script     |
-| Mục đích          | Tích lũy tiền                    | Rút tiền về ví owner               |
+User nhập số tiền tip trên giao diện.
+Frontend gửi request đến Backend.
+Backend lấy trạng thái hiện tại của TipJar.
+Decode datum hiện tại.
+Tính toán trạng thái mới.
+Build transaction bằng MeshTxBuilder.
+Tạo redeemer Tip.
+User ký transaction bằng wallet.
+Transaction được gửi đến Hydra hoặc Layer-1.
+Validator kiểm tra tính hợp lệ.
+UTxO cũ bị consume.
+UTxO mới với datum mới được tạo ra.
+User
+↓
+Frontend
+↓
+Backend
+↓
+MeshTxBuilder
+↓
+Wallet Sign
+↓
+Hydra / Cardano
+↓
+Validator
+↓
+New Script UTxO
 
-👉 Kết luận: Tip là public action, Claim là restricted action — thể hiện rõ ràng qua redeemer và signature check.
+👉 Kết luận: Toàn bộ hệ thống hoạt động theo mô hình state transition, trong đó Off-chain chịu trách nhiệm chuẩn bị dữ liệu còn On-chain chịu trách nhiệm xác thực.
 
 </details>
 
