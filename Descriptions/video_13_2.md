@@ -1,7 +1,7 @@
 ### Title:
 
 ```
-13 - Integrating Smart Contracts with the Hydra Backend – Connecting Off-Chain Code to Hydra Heads
+13.2 - Integrating Smart Contracts with the Hydra Backend – Connecting Off-Chain Code to Hydra Heads
 ```
 
 ### Description:
