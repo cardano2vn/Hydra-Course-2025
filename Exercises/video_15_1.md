@@ -6,13 +6,27 @@
 
 ### 📌 Đề bài
 
-Nêu rõ **mục tiêu chính** khi thực hiện phần Kiểm thử và hoàn thành Hydra DApp (TipJar).
+Sau khi hoàn thành các chức năng chính của Hydra TipJar DApp như Commit, Tip, Claim, Decommit và Fanout, bước tiếp theo là tiến hành kiểm thử toàn diện (Testing) và hoàn thiện hệ thống (Completion) trước khi đưa sản phẩm đến người dùng thực tế.
+
+Hãy phân tích mục tiêu chính của giai đoạn này và giải thích vì sao việc kiểm thử đóng vai trò quan trọng trong quá trình phát triển DApp trên Cardano và Hydra.
+
+Trong câu trả lời, hãy đề cập đến:
+
+- Tại sao cần kiểm tra tính chính xác của toàn bộ luồng nghiệp vụ.
+- Tầm quan trọng của việc đồng bộ dữ liệu giữa Frontend, Backend, Hydra Head và Layer-1.
+- Những rủi ro có thể xảy ra nếu bỏ qua bước kiểm thử.
+- Vai trò của việc đánh giá hiệu năng, tính ổn định và trải nghiệm người dùng trước khi triển khai production.
 
 ### 💡 Gợi ý
 
-- Đồng bộ realtime
-- Kiểm thử multi-user
-- Xác thực luồng end-to-end
+Hãy suy nghĩ về các khía cạnh sau:
+
+- Dữ liệu có được cập nhật realtime sau mỗi giao dịch hay không.
+- Nhiều người dùng cùng thao tác trên Hydra Head sẽ ảnh hưởng như thế nào đến hệ thống.
+- Các luồng Commit, Tip, Claim, Decommit và Fanout có hoạt động đúng từ đầu đến cuối không.
+- Frontend có hiển thị đúng trạng thái hiện tại của Hydra Head không.
+- Hệ thống có xử lý tốt các trường hợp lỗi như giao dịch thất bại, mất kết nối hoặc dữ liệu không đồng bộ không.
+- Hiệu năng giao dịch trong Hydra có đáp ứng được mục tiêu realtime và chi phí thấp hay không.
 
 <details>
 <summary>Đáp án</summary>
@@ -46,14 +60,27 @@ Mục tiêu chính là **hoàn thiện và xác thực toàn bộ hệ thống**
 
 ### 📌 Đề bài
 
-Giải thích cách sử dụng **React Query (useQuery)** để quản lý và hiển thị trạng thái Hydra Head trên giao diện.
+Một trong những yêu cầu quan trọng của Hydra DApp là khả năng hiển thị chính xác trạng thái hiện tại của Hydra Head theo thời gian thực. Người dùng cần biết Hydra Head đang ở trạng thái nào (IDLE, OPEN, CLOSED, FANOUT_POSSIBLE), tổng số tài sản đã commit và các thông tin liên quan khác.
+
+Hãy giải thích cách sử dụng React Query (useQuery) để quản lý dữ liệu Hydra Head trên Frontend và trình bày cách dữ liệu được tự động cập nhật khi trạng thái hệ thống thay đổi.
+
+Trong câu trả lời, hãy làm rõ:
+
+- Vai trò của queryKey, queryFn và refetchInterval.
+- Cách React Query quản lý cache.
+- Cách xử lý trạng thái loading và error.
+- Lợi ích của việc sử dụng React Query thay vì gọi API thủ công bằng useEffect.
 
 ### 💡 Gợi ý
 
-- queryKey
-- queryFn: getStatus()
-- Component Status
-- refetchInterval
+Có thể tập trung vào các nội dung sau:
+
+- API getStatus() trả về trạng thái Hydra Head.
+- Sử dụng useQuery để fetch dữ liệu.
+- Tự động refetch theo chu kỳ để đồng bộ dữ liệu.
+- Hiển thị trạng thái trên component Dashboard.
+- Tận dụng cache để giảm số lượng request không cần thiết.
+- Quản lý loading, error và success state một cách nhất quán.
 
 <details>
 <summary>Đáp án</summary>
@@ -153,14 +180,27 @@ export function Status({ loading, data }: StatusProps) {
 
 ### 📌 Đề bài
 
-Mô tả cách lấy và hiển thị danh sách UTxO từ Layer-1 để người dùng chọn khi thực hiện Commit vào Hydra.
+Trước khi người dùng có thể Commit tài sản vào Hydra Head, hệ thống cần truy vấn và hiển thị danh sách UTxO hiện có trong ví Cardano của họ. Đây là một bước quan trọng do Cardano sử dụng mô hình eUTxO, trong đó mỗi giao dịch phải chỉ định chính xác UTxO được sử dụng.
+
+Hãy mô tả quy trình lấy dữ liệu UTxO từ Layer-1 và trình bày cách xây dựng giao diện để người dùng lựa chọn UTxO muốn Commit vào Hydra.
+
+Trong câu trả lời, hãy giải thích:
+
+- Vì sao Cardano yêu cầu lựa chọn UTxO cụ thể.
+- Cách lấy dữ liệu từ API Backend.
+- Điều kiện nào để thực hiện việc fetch dữ liệu.
+- Cách hiển thị và quản lý danh sách UTxO trên giao diện.
 
 ### 💡 Gợi ý
 
-- useQuery với enabled condition
-- getUTxOsCommit API
-- Dropdown / Select UI
-- Conditional fetching
+Hãy suy nghĩ về các vấn đề sau:
+
+- User đã kết nối ví hay chưa.
+- Danh sách UTxO được lấy từ đâu.
+- Sử dụng enabled trong React Query như thế nào.
+- Hiển thị UTxO dưới dạng Select hoặc Dropdown.
+- Hiển thị các thông tin như TxHash, Output Index và ADA Amount.
+- Xử lý trường hợp không có UTxO hoặc API trả về lỗi.
 
 <details>
 <summary>Đáp án</summary>
@@ -265,7 +305,6 @@ export function CommitForm() {
     </div>
   );
 }
-
 ```
 
 **Chi tiết quan trọng**:
@@ -288,14 +327,32 @@ export function CommitForm() {
 
 ### 📌 Đề bài
 
-Phân tích luồng xử lý **từ đầu đến cuối** khi người dùng thực hiện Commit ADA vào Hydra Head và đồng thời tạo Creator/Proposal trong TipJar.
+Trong TipJar DApp, người dùng có thể thực hiện Commit ADA vào Hydra Head và đồng thời đăng ký trở thành Creator hoặc tạo Proposal mới trong hệ thống.
+
+Hãy phân tích chi tiết luồng xử lý từ khi người dùng nhấn nút Commit cho đến khi dữ liệu được lưu thành công trên blockchain và database.
+
+Trong câu trả lời, hãy mô tả:
+
+- Các bước xử lý trên Frontend.
+- Vai trò của Backend trong việc xây dựng transaction.
+- Quá trình ký và gửi giao dịch bằng ví Cardano.
+- Cách lưu dữ liệu Creator hoặc Proposal vào cơ sở dữ liệu.
+- Cách đồng bộ giao diện sau khi giao dịch hoàn tất.
 
 ### 💡 Gợi ý
 
-- getUTxOs → commit → signTx → submitTx
-- createProposal (database)
-- invalidateQueries để sync UI
-- Error handling
+Có thể chia luồng thành nhiều bước:
+
+- Lấy danh sách UTxO.
+- Người dùng chọn UTxO.
+- Gửi request tới API Commit.
+- Backend build transaction.
+- Wallet sign transaction.
+- Submit transaction lên Hydra.
+- Xác nhận giao dịch thành công.
+- Lưu dữ liệu vào Database.
+- Refresh dữ liệu trên giao diện bằng React Query.
+- Xử lý các trường hợp lỗi xảy ra trong quá trình thực hiện.
 
 <details>
 <summary>Đáp án</summary>
@@ -501,14 +558,21 @@ export async function confirmCommit(
 
 ### 📌 Đề bài
 
-Giải thích vai trò của `queryClient.invalidateQueries()` sau khi thực hiện các hành động quan trọng (Commit, Tip, Claim…). Tại sao cần invalidate?
+Trong một ứng dụng realtime như Hydra TipJar DApp, dữ liệu trên blockchain và backend có thể thay đổi liên tục sau mỗi giao dịch. Nếu Frontend vẫn sử dụng dữ liệu cũ trong cache, người dùng có thể nhìn thấy thông tin không chính xác về số dư, trạng thái Hydra Head hoặc lịch sử giao dịch.
+
+Hãy giải thích vai trò của queryClient.invalidateQueries() trong React Query và phân tích vì sao đây là một kỹ thuật quan trọng để duy trì tính nhất quán dữ liệu giữa giao diện người dùng và trạng thái thực tế của hệ thống.
 
 ### 💡 Gợi ý
 
-- Đồng bộ dữ liệu (data consistency)
-- Realtime UX
-- Các queryKey chính cần invalidate
-- Stale data problem
+Hãy xem xét các khía cạnh sau:
+
+- Khái niệm Stale Data là gì.
+- Điều gì xảy ra nếu không invalidate cache.
+- Sau Commit, Tip, Claim hoặc Fanout thì dữ liệu nào thay đổi.
+- Những query nào cần được refetch.
+- Sự khác biệt giữa invalidateQueries() và setQueryData().
+- Khi nào nên sử dụng Optimistic Update kết hợp với Invalidate.
+- Cách React Query giúp tạo trải nghiệm realtime cho người dùng Hydra.
 
 <details>
 <summary>Đáp án</summary>

@@ -6,13 +6,19 @@
 
 ### 📌 Đề bài
 
-Giải thích vai trò quan trọng của tầng **Off-chain** (Backend) khi tích hợp với Smart Contract trong hệ thống TipJar trên Hydra.
+Trong kiến trúc của một DApp trên Cardano, Smart Contract chỉ chịu trách nhiệm xác thực các điều kiện giao dịch và bảo vệ tài sản trên Blockchain. Tuy nhiên, Smart Contract không thể tự lấy dữ liệu từ người dùng, tự tạo transaction hay tự cập nhật giao diện. Để giải quyết vấn đề này, hệ thống cần một tầng Off-chain Layer (Backend) đóng vai trò trung gian giữa Frontend và On-chain. Hãy giải thích vai trò của tầng Off-chain trong dự án TipJar trên Hydra, đồng thời phân tích vì sao một DApp hiện đại không thể chỉ dựa vào Smart Contract mà không có Backend hỗ trợ.
 
 ### 💡 Gợi ý
 
-- Orchestration
-- State management
-- Giảm tải On-chain
+Hãy suy nghĩ về các nội dung sau:
+
+- Smart Contract có thể làm gì và không thể làm gì?
+- Off-chain đóng vai trò gì trong việc xây dựng transaction?
+- Vì sao cần đọc UTxO và Datum trước khi gửi giao dịch?
+- Off-chain hỗ trợ quản lý trạng thái như thế nào?
+- Tại sao việc xử lý một phần logic ở Backend giúp giảm tải cho On-chain?
+- Vai trò của Mesh SDK và Hydra SDK trong kiến trúc này là gì?
+- Off-chain giúp cải thiện hiệu năng và trải nghiệm người dùng như thế nào?
 
 <details>
 <summary>Đáp án</summary>
@@ -34,13 +40,22 @@ Tầng Off-chain đóng vai trò là **bộ điều phối trung tâm** (orchest
 
 ### 📌 Đề bài
 
-MeshTxBuilder là gì? Vai trò của nó trong việc xử lý Tip & Claim?
+Trong dự án TipJar, tầng Off-chain sử dụng lớp MeshTxBuilder để xây dựng và quản lý các giao dịch tương tác với Smart Contract.
+
+MeshTxBuilder là thành phần chịu trách nhiệm chuẩn bị dữ liệu, xử lý trạng thái hiện tại của hợp đồng và tạo transaction hợp lệ trước khi gửi lên Hydra Head hoặc Cardano Layer-1.
+
+Hãy giải thích MeshTxBuilder là gì, vai trò của nó trong hệ thống và cách nó hỗ trợ hai hành động quan trọng là Tip và Claim.
 
 ### 💡 Gợi ý
 
-- Kế thừa MeshAdapter
-- Transaction Builder
-- State transition
+Hãy tìm hiểu các nội dung sau:
+
+- MeshTxBuilder được xây dựng dựa trên thành phần nào?
+- Vai trò của Transaction Builder trong Cardano là gì?
+- MeshTxBuilder lấy dữ liệu từ Smart Contract bằng cách nào?
+- Vì sao cần đọc Datum trước khi tạo transaction mới?
+- MeshTxBuilder xử lý state transition như thế nào?
+- Mối quan hệ giữa Frontend → MeshTxBuilder → Smart Contract.
 
 <details>
 <summary>Đáp án</summary>
@@ -62,13 +77,30 @@ MeshTxBuilder là gì? Vai trò của nó trong việc xử lý Tip & Claim?
 
 ### 📌 Đề bài
 
-Mô tả các bước chính trong hàm `tip()` của MeshTxBuilder.
+Khi người dùng gửi một khoản tip vào TipJar, hệ thống không đơn giản chỉ chuyển ADA đến Smart Contract.
+
+Thay vào đó, Off-chain phải:
+
+- Đọc trạng thái hiện tại của TipJar.
+- Phân tích Datum hiện có.
+- Cập nhật danh sách người gửi tip.
+- Tạo Datum mới.
+- Xây dựng transaction mới để cập nhật trạng thái của hợp đồng.
+
+Hãy mô tả chi tiết các bước xử lý bên trong hàm tip() của MeshTxBuilder.
 
 ### 💡 Gợi ý
 
-- getWalletForTx
-- Fetch UTxO
-- Decode datum → Update state → Encode datum
+Hãy phân tích tuần tự quy trình sau:
+
+- Vai trò của getWalletForTx().
+- Vì sao cần lấy UTxO và Collateral?
+- Làm thế nào để tìm UTxO hiện tại của Smart Contract?
+- Quá trình decode datum diễn ra như thế nào?
+- Hệ thống xử lý trường hợp: User đã từng tip. User tip lần đầu.
+- Cách tạo Datum mới sau khi cập nhật dữ liệu.
+- Vai trò của Redeemer Tip.
+- Transaction mới được xây dựng như thế nào theo mô hình eUTxO?
 
 <details>
 <summary>Đáp án</summary>
@@ -92,13 +124,24 @@ Các bước chính trong `tip()`:
 
 ### 📌 Đề bài
 
-Giải thích cách Off-chain xử lý Datum khi thực hiện Tip (decode, update, encode).
+Datum là nơi lưu trữ trạng thái của Smart Contract trên Cardano. Trong TipJar, Datum chứa danh sách người gửi tip cùng số tiền tương ứng.
+
+Khi người dùng thực hiện hành động Tip, tầng Off-chain phải đọc trạng thái hiện tại, cập nhật dữ liệu và chuyển đổi lại sang định dạng mà Smart Contract có thể hiểu được.
+
+Hãy giải thích toàn bộ quy trình xử lý Datum trong Off-chain, bao gồm các bước Decode → Update → Encode.
 
 ### 💡 Gợi ý
 
-- convertDatum
-- existing user
-- mConStr0
+Hãy tập trung vào các câu hỏi sau:
+
+- Datum được lưu trên Blockchain dưới dạng gì?
+- Vai trò của hàm convertDatum().
+- Sau khi decode, dữ liệu được biểu diễn như thế nào trong TypeScript?
+- Làm thế nào để tìm một user đã tồn tại trong danh sách tip?
+- Nếu user đã tồn tại thì cập nhật amount ra sao?
+- Nếu user chưa tồn tại thì thêm record mới như thế nào?
+- Vai trò của hàm mConStr0() khi encode Datum.
+- Điều gì xảy ra nếu Datum được encode sai định dạng?
 
 <details>
 <summary>Đáp án</summary>
@@ -117,24 +160,38 @@ Giải thích cách Off-chain xử lý Datum khi thực hiện Tip (decode, upda
 
 ### 📌 Đề bài
 
-So sánh logic xử lý **Tip** và **Claim** trong MeshTxBuilder.
+Trong TipJar có hai hành động quan trọng:
+
+- Tip: Người dùng gửi tiền vào TipJar.
+- Claim: Chủ sở hữu rút tiền từ TipJar.
+
+Mặc dù cả hai đều tương tác với cùng một Smart Contract, nhưng logic xử lý của chúng hoàn toàn khác nhau.
+
+Hãy so sánh chi tiết hai hành động Tip và Claim từ góc nhìn Off-chain và Smart Contract.
 
 ### 💡 Gợi ý
 
-- Redeemer
-- Quyền truy cập
-- Output
+Hãy xem xét các khía cạnh sau:
+
+- Redeemer nào được sử dụng trong mỗi hành động?
+- Ai có quyền thực hiện Tip?
+- Ai có quyền thực hiện Claim?
+- Smart Contract kiểm tra chữ ký trong trường hợp nào?
+- Cách xử lý UTxO của mỗi hành động khác nhau ra sao?
+- Datum có được cập nhật hay không?
+- Kết quả cuối cùng của transaction là gì?
+- Vì sao Tip được xem là public action còn Claim là restricted action?
 
 <details>
 <summary>Đáp án</summary>
 
-| Tiêu chí          | Tip                              | Claim                              |
-|-------------------|----------------------------------|------------------------------------|
-| Redeemer          | `Tip`                            | `Claim`                            |
-| Ai thực hiện      | Bất kỳ ai                        | Chỉ Owner (kiểm tra chữ ký)        |
-| Xử lý UTxO        | Consume cũ → Tạo mới + thêm tiền | Consume và rút toàn bộ tiền        |
-| Datum             | Cập nhật danh sách tip           | Thường không cần output script     |
-| Mục đích          | Tích lũy tiền                    | Rút tiền về ví owner               |
+| Tiêu chí     | Tip                              | Claim                          |
+| ------------ | -------------------------------- | ------------------------------ |
+| Redeemer     | `Tip`                            | `Claim`                        |
+| Ai thực hiện | Bất kỳ ai                        | Chỉ Owner (kiểm tra chữ ký)    |
+| Xử lý UTxO   | Consume cũ → Tạo mới + thêm tiền | Consume và rút toàn bộ tiền    |
+| Datum        | Cập nhật danh sách tip           | Thường không cần output script |
+| Mục đích     | Tích lũy tiền                    | Rút tiền về ví owner           |
 
 👉 Kết luận: Tip là public action, Claim là restricted action — thể hiện rõ ràng qua redeemer và signature check.
 

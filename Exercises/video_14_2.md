@@ -6,13 +6,21 @@
 
 ### 📌 Đề bài
 
-Giải thích vai trò của component **Account** và hook `useWallet` trong Frontend của TipJar.
+rong các ứng dụng Web3, việc quản lý và hiển thị thông tin ví là một trong những chức năng quan trọng nhất của Frontend.
+
+Trong dự án Hydra TipJar, component Account chịu trách nhiệm hiển thị trạng thái kết nối ví, địa chỉ ví, số dư ADA và các thông tin liên quan đến người dùng. Để thực hiện điều này, hệ thống sử dụng hook useWallet nhằm lấy dữ liệu từ các ví Cardano như Nami, Lace hoặc Eternl.
+
+Hãy giải thích vai trò của component Account và hook useWallet, đồng thời mô tả các dữ liệu quan trọng mà hook này cung cấp cho giao diện người dùng.
 
 ### 💡 Gợi ý
 
-- "use client"
-- wallet, browserWallet, address, stakeAddress
-- UX wallet display
+Hãy suy nghĩ về các vấn đề sau:
+
+- Vì sao component này cần sử dụng "use client" trong Next.js?
+- Hook useWallet đóng vai trò gì trong việc giao tiếp với ví Cardano?
+- Ý nghĩa của các thuộc tính: wallet, browserWallet, address,stakeAddress.
+- Những thông tin nào cần hiển thị trên giao diện để người dùng dễ dàng nhận biết trạng thái ví?
+- Tại sao nên tạo abstraction thông qua hook thay vì gọi trực tiếp API của từng loại ví?
 
 <details>
 <summary>Đáp án</summary>
@@ -36,14 +44,23 @@ Giải thích vai trò của component **Account** và hook `useWallet` trong Fr
 
 ### 📌 Đề bài
 
-Mô tả cách lấy và cập nhật số dư ADA trong component Account, bao gồm cơ chế retry.
+Một trong những thông tin quan trọng nhất đối với người dùng là số dư ADA hiện có trong ví.
+
+Trong TipJar DApp, Frontend cần truy vấn số dư từ ví Cardano và hiển thị lên giao diện ngay sau khi người dùng kết nối ví. Tuy nhiên, trên thực tế có thể xảy ra các trường hợp ví chưa sẵn sàng hoặc dữ liệu chưa được đồng bộ ngay lập tức.
+
+Hãy mô tả cách component Account lấy số dư ADA từ ví, cách chuyển đổi đơn vị Lovelace sang ADA và cơ chế retry được sử dụng để đảm bảo dữ liệu luôn được cập nhật chính xác.
 
 ### 💡 Gợi ý
 
-- useEffect
-- browserWallet.getBalance()
-- Retry sau 2s
-- DECIMAL_PLACE
+Hãy tập trung vào các nội dung sau:
+
+- Sử dụng useEffect để fetch dữ liệu khi nào?
+- Vai trò của browserWallet.getBalance().
+- Lovelace là gì và tại sao cần chuyển đổi sang ADA?
+- Ý nghĩa của hằng số DECIMAL_PLACE = 1_000_000.
+- Điều gì xảy ra nếu ví chưa phản hồi dữ liệu?
+- Vì sao nên retry sau vài giây thay vì hiển thị lỗi ngay lập tức?
+- CountUp animation giúp cải thiện trải nghiệm người dùng như thế nào?
 
 <details>
 <summary>Đáp án</summary>
@@ -94,15 +111,26 @@ useEffect(() => {
 
 ### 📌 Đề bài
 
-Phân tích cách thiết kế UI hiển thị thông tin ví (compact + detail) trong TipJar. Tại sao chia thành 2 phần (Trigger + Content)?
+Khi người dùng kết nối ví, hệ thống cần cung cấp một giao diện vừa gọn gàng vừa đầy đủ thông tin.
+
+Trong TipJar, giao diện ví được thiết kế theo mô hình hai lớp:
+
+1. Compact View (hiển thị nhanh trên Header)
+2. Detail View (hiển thị chi tiết khi người dùng click)
+
+Hãy phân tích cách thiết kế giao diện này và giải thích lý do sử dụng `PopoverTrigger` kết hợp với `PopoverContent`.
 
 ### 💡 Gợi ý
 
-- PopoverTrigger vs PopoverContent
-- Shorten address
-- Copy button
-- CountUp animation
-- Logout action
+Hãy suy nghĩ về các yếu tố UX sau:
+
+- Tại sao không hiển thị toàn bộ địa chỉ ví ngay trên Header?
+- Vai trò của: PopoverTrigger, PopoverContent
+- Vì sao cần hàm shortenString()?
+- Những thông tin nào nên hiển thị ở chế độ chi tiết?
+- Chức năng Copy Address có lợi ích gì?
+- Vì sao nên cung cấp nút Logout hoặc Disconnect Wallet?
+- Thiết kế này có điểm gì giống các ứng dụng Web2 hiện đại?
 
 <details>
 <summary>Đáp án</summary>
@@ -188,14 +216,18 @@ function CopyButton({ value }: { value: string }) {
 
 ### 📌 Đề bài
 
-Giải thích vai trò của Prisma (ORM) trong dự án TipJar và các thao tác CRUD chính cần triển khai.
+Ngoài Blockchain và Hydra Head, dự án TipJar còn cần một cơ sở dữ liệu để lưu trữ thông tin người dùng, lịch sử tip, proposal và các dữ liệu phục vụ giao diện. Để đơn giản hóa việc thao tác với cơ sở dữ liệu PostgreSQL, dự án sử dụng Prisma ORM. Hãy giải thích Prisma là gì, vai trò của Prisma trong kiến trúc hệ thống và mô tả các thao tác CRUD quan trọng cần triển khai trong TipJar.
 
 ### 💡 Gợi ý
 
-- ORM (Object-Relational Mapping)
-- PostgreSQL
-- Schema definition
-- CRUD operations (Create, Read, Update, Delete)
+Hãy tìm hiểu các nội dung sau:
+
+- ORM (Object Relational Mapping) là gì?
+- Prisma giúp lập trình viên tránh những khó khăn nào khi làm việc với SQL?
+- Vai trò của file schema.prisma.
+- Cách Prisma sinh TypeScript types tự động.
+- Những thao tác CRUD nào xuất hiện trong TipJar? Tạo User, Lưu lịch sử Tip, Lấy danh sách Tip, Cập nhật trạng thái TipJar.
+- Vì sao Prisma phù hợp với kiến trúc Next.js Full-stack?
 
 <details>
 <summary>Đáp án</summary>
@@ -293,15 +325,32 @@ await prisma.tipJarState.update({
 
 ### 📌 Đề bài
 
-Mô tả luồng tổng thể khi người dùng thực hiện hành động **Tip** từ Frontend qua Backend đến Blockchain/Hydra. Các thành phần nào tương tác?
+Một trong những mục tiêu quan trọng nhất của TipJar là kết nối liền mạch giữa giao diện người dùng, hệ thống Backend và Blockchain Cardano/Hydra.
+
+Khi người dùng thực hiện hành động Tip, rất nhiều thành phần phải phối hợp với nhau để hoàn thành giao dịch:
+
+- Frontend
+- Wallet
+- Backend API
+- Hydra Head
+- Cardano Layer-1
+- Database
+
+Hãy mô tả toàn bộ luồng xử lý từ lúc người dùng nhấn nút Tip cho đến khi giao diện được cập nhật với dữ liệu mới nhất.
 
 ### 💡 Gợi ý
 
-- useWallet hook → API call
-- Backend validation & NextAuth
-- MeshTxBuilder xây dựng transaction
-- Hydra Head (realtime) vs Layer-1
-- Polling / WebSocket cập nhật UI
+Hãy phân tích từng bước trong hệ thống:
+
+- Vai trò của useWallet.
+- Frontend gửi dữ liệu lên Backend như thế nào?
+- NextAuth xác thực người dùng ra sao?
+- Backend sử dụng MeshTxBuilder để làm gì?
+- Transaction được ký ở đâu?
+- Transaction được gửi lên Hydra hay Layer-1?
+- Database lưu những dữ liệu gì sau khi giao dịch thành công?
+- Frontend cập nhật dữ liệu mới bằng Polling, React Query hay WebSocket?
+- Vì sao kiến trúc nhiều lớp giúp hệ thống dễ mở rộng hơn?
 
 <details>
 <summary>Đáp án</summary>
