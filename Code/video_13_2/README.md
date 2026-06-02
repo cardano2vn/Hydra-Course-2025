@@ -494,6 +494,7 @@ Cuối cùng, hàm trả về một mảng object có cấu trúc rõ ràng:
 👉 Ý nghĩa quan trọng: Chuyển dữ liệu từ on-chain format (CBOR) sang off-chain usable object. Giúp frontend/backend dễ dàng hiển thị hoặc xử lý logic. Là bước bridge giữa smart contract state và application state
 👉 Tóm lại, đây là hàm “decoder” giúp biến dữ liệu blockchain phức tạp thành cấu trúc dữ liệu đơn giản và dễ sử dụng trong hệ thống.
 
+<div align="center">
 
 ## 📚 **Tài liệu tham khảo**
 
